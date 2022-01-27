@@ -95,8 +95,18 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+    },
+    'oracle_db': {
+        'ENGINE': 'django.db.backends.oracle',
+        'NAME': 'fastdbwin',
+        'USER': '"bi21_onfi2"',
+        'PASSWORD': '"bi21_onfi2"',
+        'HOST': '134.106.56.54',
+        'PORT': '1521',
     }
 }
+
+DATABASE_ROUTERS = ['routers.db_routers.ProductRouter']
 
 
 # Password validation

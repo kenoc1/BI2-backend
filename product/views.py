@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
-from .models import Product, Category
+from .models import Product, ProductSubcategory
 from .serializers import ProductSerializer, CategorySerializer
 
 class LatestProductsList(APIView):
@@ -29,8 +29,8 @@ class ProductDetail(APIView):
 class CategoryDetail(APIView):
     def get_object(self, category_slug):
         try:
-            return Category.objects.get(slug=category_slug)
-        except Category.DoesNotExist:
+            return ProductSubcategory.objects.get(slug=category_slug)
+        except ProductSubcategory.DoesNotExist:
             raise Http404
     
     def get(self, request, category_slug, format=None):
