@@ -7,38 +7,59 @@ from django.db import models
 
 class ProductFamily(models.Model):
     product_family_id = models.FloatField(primary_key=True, db_column="produkt_familie_id")
-    description = models.CharField(max_length=50)
+    description = models.CharField(max_length=50, db_column="bezeichnung")
+    slug = models.SlugField(default="test")
 
     class Meta:
         managed = False
         db_table = 'produkt_familie'
 
+    def __str__(self):
+        return self.description
+
+    def get_absolute_url(self):
+        return f'/{self.slug}/'
+
 
 class ProductDivision(models.Model):
     product_division_id = models.FloatField(primary_key=True, db_column="produkt_sparte_id")
-    product_family = models.ForeignKey(ProductFamily, on_delete=models.DO_NOTHING, blank=True, null=True)
-    description = models.CharField(max_length=50)
+    product_family = models.ForeignKey(ProductFamily, on_delete=models.DO_NOTHING, blank=True, null=True, db_column="produkt_familie_id")
+    description = models.CharField(max_length=50, db_column="bezeichnung")
+    slug = models.SlugField(default="test")
 
     class Meta:
         managed = False
         db_table = 'produkt_sparte'
 
+    def __str__(self):
+        return self.description
+
+    def get_absolute_url(self):
+        return f'/{self.slug}/'
+
 
 class ProductCategory(models.Model):
     product_category_id = models.FloatField(primary_key=True, db_column="produkt_kategorie_id")
-    Product_division = models.ForeignKey(ProductDivision, on_delete=models.DO_NOTHING, blank=True, null=True)
-    description = models.CharField(max_length=50)
+    Product_division = models.ForeignKey(ProductDivision, on_delete=models.DO_NOTHING, blank=True, null=True, db_column="produkt_sparte_id")
+    description = models.CharField(max_length=50, db_column="bezeichnung")
+    slug = models.SlugField(default="test")
 
     class Meta:
         managed = False
         db_table = 'produkt_kategorie'
 
+    def __str__(self):
+        return self.description
+
+    def get_absolute_url(self):
+        return f'/{self.slug}/'
+
 
 class ProductSubcategory(models.Model):
     product_subcategory_id = models.FloatField(primary_key=True, db_column="produkt_subkategorie_id")
-    product_category = models.ForeignKey(ProductCategory, on_delete=models.DO_NOTHING, blank=True, null=True)
-    description = models.CharField(max_length=50)
-    # slug = models.SlugField()
+    product_category = models.ForeignKey(ProductCategory, on_delete=models.DO_NOTHING, blank=True, null=True, db_column="produkt_kategorie_id")
+    description = models.CharField(max_length=50, db_column="bezeichnung")
+    slug = models.SlugField(default="test")
 
     class Meta:
         ordering = ('description',)
@@ -47,15 +68,15 @@ class ProductSubcategory(models.Model):
     def __str__(self):
         return self.description
 
-    # def get_absolute_url(self):
-    #     return f'/{self.slug}/'
+    def get_absolute_url(self):
+        return f'/{self.slug}/'
 
 
 class Product(models.Model):
     product_id = models.FloatField(primary_key=True, db_column="produkt_id", default=1)
     category = models.ForeignKey(ProductSubcategory, related_name='products', on_delete=models.CASCADE, db_column="produktklasse_id")
     name = models.CharField(db_column="proukt_name", max_length=150)
-    # slug = models.SlugField()
+    slug = models.SlugField()
     description = models.CharField(max_length=500, blank=True, null=True, db_column="produktbeschreibung")
     price = models.FloatField(db_column="listenverkaufspreis")
     # image = models.ImageField(upload_to='uploads/', blank=True, null=True)
@@ -65,6 +86,7 @@ class Product(models.Model):
     class Meta:
         # ordering = ('-date_added',)
         db_table = 'produkt'
+        managed = 'true'
 
     def __str__(self):
         return self.name
