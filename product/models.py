@@ -79,8 +79,8 @@ class Product(models.Model):
     slug = models.SlugField()
     description = models.CharField(max_length=500, blank=True, null=True, db_column="produktbeschreibung")
     price = models.FloatField(db_column="listenverkaufspreis")
-    # image = models.ImageField(upload_to='uploads/', blank=True, null=True)
-    # thumbnail = models.ImageField(upload_to='uploads/', blank=True, null=True)
+    image = 'https://pixabay.com/get/ga8ab573925eed1f5f1a26cd2d6eca8ad7d51f8f956db730f4ffa532805d9bb3a0de55d7a404754325c12b9c4c206a936a2d2f63a1307497109959cc5031f389c919cde13485a21189872d8158a42e00b_1920.jpg'
+    thumbnail = 'https://pixabay.com/get/ga8ab573925eed1f5f1a26cd2d6eca8ad7d51f8f956db730f4ffa532805d9bb3a0de55d7a404754325c12b9c4c206a936a2d2f63a1307497109959cc5031f389c919cde13485a21189872d8158a42e00b_1920.jpg'
     # date_added = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -91,25 +91,24 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
-    # def get_absolute_url(self):
-    #     return f'/{self.category.slug}/{self.slug}/'
-    #
-    # def get_image(self):
-    #     if self.image:
-    #         return 'http://127.0.0.1:8000' + self.image.url
-    #     return ''
-    #
-    # def get_thumbnail(self):
-    #     if self.thumbnail:
-    #         return 'http://127.0.0.1:8000' + self.thumbnail.url
-    #     else:
-    #         if self.image:
-    #             self.thumbnail = self.make_thumbnail(self.image)
-    #             self.save()
-    #
-    #             return 'http://127.0.0.1:8000' + self.thumbnail.url
-    #         else:
-    #             return ''
+    def get_absolute_url(self):
+        return f'/{self.category.slug}/{self.slug}/'
+
+    def get_image(self):
+        return self.image
+
+    def get_thumbnail(self):
+        return self.thumbnail
+        # if self.thumbnail:
+        #     return 'http://127.0.0.1:8000' + self.thumbnail.url
+        # else:
+        #     if self.image:
+        #         self.thumbnail = self.make_thumbnail(self.image)
+        #         self.save()
+        #
+        #         return 'http://127.0.0.1:8000' + self.thumbnail.url
+        #     else:
+        #         return ''
     #
     # def make_thumbnail(self, image, size=(300, 200)):
     #     img = Image.open(image)
