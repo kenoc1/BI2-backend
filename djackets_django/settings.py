@@ -98,10 +98,10 @@ DATABASES = {
     },
     'oracle_db': {
         'ENGINE': 'django.db.backends.oracle',
-        'NAME': 'fastdbwin',
+        'NAME': 'dbprak2',
         'USER': '"bi21_onfi2"',
         'PASSWORD': '"bi21_onfi2"',
-        'HOST': '134.106.56.54',
+        'HOST': '134.106.56.44',
         'PORT': '1521',
     }
 }
