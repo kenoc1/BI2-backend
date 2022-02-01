@@ -81,6 +81,11 @@ class Product(models.Model):
     price = models.FloatField(db_column="listenverkaufspreis")
     image = 'https://pixabay.com/get/ga8ab573925eed1f5f1a26cd2d6eca8ad7d51f8f956db730f4ffa532805d9bb3a0de55d7a404754325c12b9c4c206a936a2d2f63a1307497109959cc5031f389c919cde13485a21189872d8158a42e00b_1920.jpg'
     thumbnail = 'https://pixabay.com/get/ga8ab573925eed1f5f1a26cd2d6eca8ad7d51f8f956db730f4ffa532805d9bb3a0de55d7a404754325c12b9c4c206a936a2d2f63a1307497109959cc5031f389c919cde13485a21189872d8158a42e00b_1920.jpg'
+    sku = models.FloatField(db_column="sku")
+    evaluation = models.FloatField(db_column="bewertung")
+    recycle = models.FloatField(db_column="recyclebar")
+    lowfat = models.FloatField(db_column="low_fat")
+    discount= models.FloatField(db_column="angebotsrabatt")
     # date_added = models.DateTimeField(auto_now_add=True)
 
     class Meta:
