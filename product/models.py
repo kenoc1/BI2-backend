@@ -40,7 +40,7 @@ class ProductDivision(models.Model):
 
 class ProductCategory(models.Model):
     product_category_id = models.FloatField(primary_key=True, db_column="produkt_kategorie_id")
-    Product_division = models.ForeignKey(ProductDivision, related_name="categories", on_delete=models.DO_NOTHING, blank=True, null=True, db_column="produkt_sparte_id")
+    product_division = models.ForeignKey(ProductDivision, related_name="categories", on_delete=models.DO_NOTHING, blank=True, null=True, db_column="produkt_sparte_id")
     description = models.CharField(max_length=50, db_column="bezeichnung")
     slug = models.SlugField(default="test")
 
@@ -74,7 +74,7 @@ class ProductSubcategory(models.Model):
 
 class Product(models.Model):
     product_id = models.FloatField(primary_key=True, db_column="produkt_id", default=1)
-    category = models.ForeignKey(ProductSubcategory, related_name='products', on_delete=models.CASCADE, db_column="produktklasse_id")
+    subcategory = models.ForeignKey(ProductSubcategory, related_name='products', on_delete=models.CASCADE, db_column="produktklasse_id", blank=True, null=True)
     name = models.CharField(db_column="proukt_name", max_length=150)
     slug = models.SlugField()
     description = models.CharField(max_length=500, blank=True, null=True, db_column="produktbeschreibung")
@@ -92,7 +92,7 @@ class Product(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        return f'/{self.category.slug}/{self.slug}/'
+        return f'/product/{self.slug}/'
 
     def get_image(self):
         return self.image

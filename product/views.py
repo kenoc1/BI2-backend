@@ -18,15 +18,9 @@ class LatestProductsList(APIView):
 
 
 class ProductDetail(APIView):
-    def get_object(self, category_slug, product_slug):
-        try:
-            return Product.objects.filter(category__slug=category_slug).get(slug=product_slug)
-        except Product.DoesNotExist:
-            raise Http404
-    
-    def get(self, request, category_slug, product_slug, format=None):
-        product = self.get_object(category_slug, product_slug)
-        serializer = ProductSerializer(product)
+    def get(self, request, product_slug, format=None):
+        products = Product.objects.filter(slug=product_slug)[0]
+        serializer = ProductSerializer(products)
         return Response(serializer.data)
 
 
@@ -40,7 +34,7 @@ class FamilyDetail(APIView):
     def get(self, request, family_slug, format=None):
         family = self.get_object(family_slug)
         divisions = ProductDivision.objects.filter(product_family=family)
-        products = Product.objects.filter(category__product_category__Product_division__in=divisions)[0:50]
+        products = Product.objects.filter(subcategory__product_category__product_division__in=divisions)[0:50]
         serializer = ProductSerializer(products, many=True)
         print(serializer)
         return Response(serializer.data)
