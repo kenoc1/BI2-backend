@@ -23,7 +23,7 @@ class ProductFamily(models.Model):
 
 class ProductDivision(models.Model):
     product_division_id = models.FloatField(primary_key=True, db_column="produkt_sparte_id")
-    product_family = models.ForeignKey(ProductFamily, on_delete=models.DO_NOTHING, blank=True, null=True, db_column="produkt_familie_id")
+    product_family = models.ForeignKey(ProductFamily, related_name="divisions", on_delete=models.DO_NOTHING, blank=True, null=True, db_column="produkt_familie_id")
     description = models.CharField(max_length=50, db_column="bezeichnung")
     slug = models.SlugField(default="test")
 
@@ -40,7 +40,7 @@ class ProductDivision(models.Model):
 
 class ProductCategory(models.Model):
     product_category_id = models.FloatField(primary_key=True, db_column="produkt_kategorie_id")
-    Product_division = models.ForeignKey(ProductDivision, on_delete=models.DO_NOTHING, blank=True, null=True, db_column="produkt_sparte_id")
+    product_division = models.ForeignKey(ProductDivision, related_name="categories", on_delete=models.DO_NOTHING, blank=True, null=True, db_column="produkt_sparte_id")
     description = models.CharField(max_length=50, db_column="bezeichnung")
     slug = models.SlugField(default="test")
 
@@ -57,7 +57,7 @@ class ProductCategory(models.Model):
 
 class ProductSubcategory(models.Model):
     product_subcategory_id = models.FloatField(primary_key=True, db_column="produkt_subkategorie_id")
-    product_category = models.ForeignKey(ProductCategory, on_delete=models.DO_NOTHING, blank=True, null=True, db_column="produkt_kategorie_id")
+    product_category = models.ForeignKey(ProductCategory, related_name="subcategories", on_delete=models.DO_NOTHING, blank=True, null=True, db_column="produkt_kategorie_id")
     description = models.CharField(max_length=50, db_column="bezeichnung")
     slug = models.SlugField(default="test")
 
@@ -74,11 +74,13 @@ class ProductSubcategory(models.Model):
 
 class Product(models.Model):
     product_id = models.FloatField(primary_key=True, db_column="produkt_id", default=1)
-    category = models.ForeignKey(ProductSubcategory, related_name='products', on_delete=models.CASCADE, db_column="produktklasse_id")
+    subcategory = models.ForeignKey(ProductSubcategory, related_name='products', on_delete=models.CASCADE, db_column="produktklasse_id", blank=True, null=True)
     name = models.CharField(db_column="proukt_name", max_length=150)
     slug = models.SlugField()
     description = models.CharField(max_length=500, blank=True, null=True, db_column="produktbeschreibung")
     price = models.FloatField(db_column="listenverkaufspreis")
+    image = 'https://pixabay.com/get/g641c4a85db67ab56ef8bf7f21be82821df83de5f7362b8a20543a4d0675598fbd4e9a2a2a57e6cb40f70d4f1223a488ca80eef9cb5da6078fc89483c5ac79955ecaab6ef2bbcf86c8649a4728eba39b7_1920.jpg'
+    thumbnail = 'https://pixabay.com/get/g641c4a85db67ab56ef8bf7f21be82821df83de5f7362b8a20543a4d0675598fbd4e9a2a2a57e6cb40f70d4f1223a488ca80eef9cb5da6078fc89483c5ac79955ecaab6ef2bbcf86c8649a4728eba39b7_1920.jpg'
     image = 'https://pixabay.com/get/ga8ab573925eed1f5f1a26cd2d6eca8ad7d51f8f956db730f4ffa532805d9bb3a0de55d7a404754325c12b9c4c206a936a2d2f63a1307497109959cc5031f389c919cde13485a21189872d8158a42e00b_1920.jpg'
     thumbnail = 'https://pixabay.com/get/ga8ab573925eed1f5f1a26cd2d6eca8ad7d51f8f956db730f4ffa532805d9bb3a0de55d7a404754325c12b9c4c206a936a2d2f63a1307497109959cc5031f389c919cde13485a21189872d8158a42e00b_1920.jpg'
     sku = models.FloatField(db_column="sku")
@@ -97,7 +99,7 @@ class Product(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        return f'/{self.category.slug}/{self.slug}/'
+        return f'/product/{self.slug}/'
 
     def get_image(self):
         return self.image

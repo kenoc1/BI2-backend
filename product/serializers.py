@@ -1,13 +1,12 @@
 from rest_framework import serializers
 
-from .models import ProductSubcategory, Product
+from .models import ProductSubcategory, Product, ProductFamily
 
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            "product_id",
             "name",
             "get_absolute_url",
             "description",
@@ -21,14 +20,27 @@ class ProductSerializer(serializers.ModelSerializer):
         )
 
 
-class SubcategorySerializer(serializers.ModelSerializer):
+class ProductSubcategorySerializer(serializers.ModelSerializer):
     products = ProductSerializer(many=True)
 
     class Meta:
         model = ProductSubcategory
         fields = (
-            "id",
-            "name",
+            "product_subcategory_id",
+            "description",
             "get_absolute_url",
-            "products",
+            "get_products",
+        )
+
+
+class ProductFamilySerializer(serializers.ModelSerializer):
+    # products = ProductSerializer(many=True)
+    # print(products)
+
+    class Meta:
+        model = ProductFamily
+        fields = (
+            "product_family_id",
+            "description",
+            "get_absolute_url",
         )
