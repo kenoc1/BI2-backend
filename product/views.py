@@ -40,8 +40,12 @@ class FamilyDetail(APIView):
         family = self.get_object(family_slug)
         divisions = ProductDivision.objects.filter(product_family=family)
         products = Product.objects.filter(subcategory__product_category__product_division__in=divisions).exclude(image__isnull=True).exclude(image="Kein Bild")[0:50]
-        serializer = ProductSerializer(products, many=True)
-        return Response(serializer.data)
+        serializer_products = ProductSerializer(products, many=True)
+        serializer_family = ProductFamilySerializer(family)
+        print(serializer_family)
+        print(serializer_products)
+
+        return Response({'arr1': serializer_products.data, 'arr2': serializer_family.data})
 
 
 @api_view(['POST'])

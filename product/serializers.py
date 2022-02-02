@@ -34,8 +34,6 @@ class ProductSubcategorySerializer(serializers.ModelSerializer):
 
 
 class ProductFamilySerializer(serializers.ModelSerializer):
-    # products = ProductSerializer(many=True)
-    # print(products)
 
     class Meta:
         model = ProductFamily
@@ -43,4 +41,5 @@ class ProductFamilySerializer(serializers.ModelSerializer):
             "product_family_id",
             "description",
             "get_absolute_url",
+
         )
