@@ -79,10 +79,8 @@ class Product(models.Model):
     slug = models.SlugField()
     description = models.CharField(max_length=500, blank=True, null=True, db_column="produktbeschreibung")
     price = models.FloatField(db_column="listenverkaufspreis")
-    image = 'https://pixabay.com/get/g641c4a85db67ab56ef8bf7f21be82821df83de5f7362b8a20543a4d0675598fbd4e9a2a2a57e6cb40f70d4f1223a488ca80eef9cb5da6078fc89483c5ac79955ecaab6ef2bbcf86c8649a4728eba39b7_1920.jpg'
-    thumbnail = 'https://pixabay.com/get/g641c4a85db67ab56ef8bf7f21be82821df83de5f7362b8a20543a4d0675598fbd4e9a2a2a57e6cb40f70d4f1223a488ca80eef9cb5da6078fc89483c5ac79955ecaab6ef2bbcf86c8649a4728eba39b7_1920.jpg'
-    image = 'https://pixabay.com/get/ga8ab573925eed1f5f1a26cd2d6eca8ad7d51f8f956db730f4ffa532805d9bb3a0de55d7a404754325c12b9c4c206a936a2d2f63a1307497109959cc5031f389c919cde13485a21189872d8158a42e00b_1920.jpg'
-    thumbnail = 'https://pixabay.com/get/ga8ab573925eed1f5f1a26cd2d6eca8ad7d51f8f956db730f4ffa532805d9bb3a0de55d7a404754325c12b9c4c206a936a2d2f63a1307497109959cc5031f389c919cde13485a21189872d8158a42e00b_1920.jpg'
+    image = 'https://cdn.pixabay.com/photo/2022/01/25/16/01/sky-6966721_960_720.jpg'
+    thumbnail = 'https://cdn.pixabay.com/photo/2022/01/25/16/01/sky-6966721_960_720.jpg'
     sku = models.FloatField(db_column="sku")
     evaluation = models.FloatField(db_column="bewertung")
     recycle = models.FloatField(db_column="recyclebar")

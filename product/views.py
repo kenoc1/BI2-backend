@@ -43,7 +43,7 @@ class FamilyDetail(APIView):
         divisions = ProductDivision.objects.filter(product_family=family)
         products = Product.objects.filter(subcategory__product_category__product_division__in=divisions)[0:50]
         serializer = ProductSerializer(products, many=True)
-        print(serializer)
+        print(serializer.data)
         return Response(serializer.data)
 
 
