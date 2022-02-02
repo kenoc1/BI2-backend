@@ -1,8 +1,9 @@
-from io import BytesIO
 from PIL import Image
-
+import requests
+from io import BytesIO
 from django.core.files import File
 from django.db import models
+
 
 
 class ProductFamily(models.Model):
@@ -23,7 +24,8 @@ class ProductFamily(models.Model):
 
 class ProductDivision(models.Model):
     product_division_id = models.FloatField(primary_key=True, db_column="produkt_sparte_id")
-    product_family = models.ForeignKey(ProductFamily, related_name="divisions", on_delete=models.DO_NOTHING, blank=True, null=True, db_column="produkt_familie_id")
+    product_family = models.ForeignKey(ProductFamily, related_name="divisions", on_delete=models.DO_NOTHING, blank=True,
+                                       null=True, db_column="produkt_familie_id")
     description = models.CharField(max_length=50, db_column="bezeichnung")
     slug = models.SlugField(default="test")
 
@@ -40,7 +42,8 @@ class ProductDivision(models.Model):
 
 class ProductCategory(models.Model):
     product_category_id = models.FloatField(primary_key=True, db_column="produkt_kategorie_id")
-    product_division = models.ForeignKey(ProductDivision, related_name="categories", on_delete=models.DO_NOTHING, blank=True, null=True, db_column="produkt_sparte_id")
+    product_division = models.ForeignKey(ProductDivision, related_name="categories", on_delete=models.DO_NOTHING,
+                                         blank=True, null=True, db_column="produkt_sparte_id")
     description = models.CharField(max_length=50, db_column="bezeichnung")
     slug = models.SlugField(default="test")
 
@@ -57,7 +60,8 @@ class ProductCategory(models.Model):
 
 class ProductSubcategory(models.Model):
     product_subcategory_id = models.FloatField(primary_key=True, db_column="produkt_subkategorie_id")
-    product_category = models.ForeignKey(ProductCategory, related_name="subcategories", on_delete=models.DO_NOTHING, blank=True, null=True, db_column="produkt_kategorie_id")
+    product_category = models.ForeignKey(ProductCategory, related_name="subcategories", on_delete=models.DO_NOTHING,
+                                         blank=True, null=True, db_column="produkt_kategorie_id")
     description = models.CharField(max_length=50, db_column="bezeichnung")
     slug = models.SlugField(default="test")
 
@@ -74,18 +78,19 @@ class ProductSubcategory(models.Model):
 
 class Product(models.Model):
     product_id = models.FloatField(primary_key=True, db_column="produkt_id", default=1)
-    subcategory = models.ForeignKey(ProductSubcategory, related_name='products', on_delete=models.CASCADE, db_column="produktklasse_id", blank=True, null=True)
+    subcategory = models.ForeignKey(ProductSubcategory, related_name='products', on_delete=models.CASCADE,
+                                    db_column="produktklasse_id", blank=True, null=True)
     name = models.CharField(db_column="proukt_name", max_length=150)
     slug = models.SlugField()
     description = models.CharField(max_length=500, blank=True, null=True, db_column="produktbeschreibung")
     price = models.FloatField(db_column="listenverkaufspreis")
-    image = 'https://cdn.pixabay.com/photo/2022/01/25/16/01/sky-6966721_960_720.jpg'
-    thumbnail = 'https://cdn.pixabay.com/photo/2022/01/25/16/01/sky-6966721_960_720.jpg'
+    image = models.CharField(db_column="produktbild_link", max_length=1000)
     sku = models.FloatField(db_column="sku")
     evaluation = models.FloatField(db_column="bewertung")
     recycle = models.FloatField(db_column="recyclebar")
     lowfat = models.FloatField(db_column="low_fat")
-    discount= models.FloatField(db_column="angebotsrabatt")
+    discount = models.FloatField(db_column="angebotsrabatt")
+
     # date_added = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -100,10 +105,14 @@ class Product(models.Model):
         return f'/product/{self.slug}/'
 
     def get_image(self):
-        return self.image
+        return self.image.split(',')[0]
 
     def get_thumbnail(self):
-        return self.thumbnail
+        return self.image.split(',')[0]
+
+    def get_price(self):
+        return round(self.price, 2)
+
         # if self.thumbnail:
         #     return 'http://127.0.0.1:8000' + self.thumbnail.url
         # else:
