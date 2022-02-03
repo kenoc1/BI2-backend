@@ -6,3 +6,5 @@
 */*/.DS_Store
 db.sqlite3
 .env
+.vscode
+.idea
