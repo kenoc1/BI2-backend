@@ -45,7 +45,7 @@ class FamilyDetail(APIView):
         print(serializer_family)
         print(serializer_products)
 
-        return Response({'arr1': serializer_products.data, 'arr2': serializer_family.data})
+        return Response({'products': serializer_products.data, 'family_data': serializer_family.data})
 
 
 @api_view(['POST'])
