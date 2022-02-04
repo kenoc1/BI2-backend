@@ -1,28 +1,46 @@
 from rest_framework import serializers
 
-from .models import Category, Product
+from .models import ProductSubcategory, Product, ProductFamily
+
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            "id",
             "name",
             "get_absolute_url",
             "description",
-            "price",
+            "get_price",
             "get_image",
-            "get_thumbnail"
+            "get_thumbnail",
+            "sku",
+            "recycle",
+            "lowfat",
+            "discount",
+            "origin"
         )
 
-class CategorySerializer(serializers.ModelSerializer):
+
+class ProductSubcategorySerializer(serializers.ModelSerializer):
     products = ProductSerializer(many=True)
 
     class Meta:
-        model = Category
+        model = ProductSubcategory
         fields = (
-            "id",
-            "name",
+            "product_subcategory_id",
+            "description",
             "get_absolute_url",
-            "products",
+            "get_products",
+        )
+
+
+class ProductFamilySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ProductFamily
+        fields = (
+            "product_family_id",
+            "description",
+            "get_absolute_url",
+
         )

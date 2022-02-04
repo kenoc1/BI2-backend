@@ -4,6 +4,7 @@ env:
   AZURE_WEBAPP_NAME: bi-backend
   AZURE_WEBAPP_NAME_DEV: dev-bi-backend   # set this to the name of your Azure Web App
   PYTHON_VERSION: '3.8'              # set this to the Python version to use
+  ORACLE_PASSWORD_DB: ${{ secrets.ORACLE_PASSWORD_DB }}
 
 on:
   push:

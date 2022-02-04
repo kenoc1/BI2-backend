@@ -10,4 +10,4 @@ Für das Installieren folgende Punkte anwenden:
 - python manage.py createsuperuser
 - python manage.py runserver
 
-Bei Fragen kommt auf mich zurück
+Bei Fragen kommt gerne auf mich zurück

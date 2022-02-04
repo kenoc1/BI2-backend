@@ -1,7 +1,10 @@
-db.sqlite3
 *.pyc
 */*.pyc
 */*/*.pyc
 .DS_Store
 */.DS_Store
 */*/.DS_Store
+db.sqlite3
+.env
+.vscode
+.idea
