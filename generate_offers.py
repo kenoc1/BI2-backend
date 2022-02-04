@@ -1,4 +1,4 @@
-from random import randint
+from random import randint, uniform
 
 import cx_Oracle
 import os
@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-PRODUCT_OFFER_MAX = 10
+PRODUCT_OFFER_MAX = 100
 
 
 class Generator:
@@ -28,13 +28,19 @@ class Generator:
 
     def set_random(self, product_id: int, offer_discount: float):
         print(f"P-ID: {product_id} ; Discount: {offer_discount}")
-        pass
+        with self.conn.cursor() as cursor:
+            cursor.execute(
+                """update PRODUKT set ANGEBOTSRABATT=:offer_discount where PRODUKT_ID = :product_id""",
+                product_id=product_id, offer_discount=offer_discount)
+            self.conn.commit()
 
     def get_random_offer_value(self) -> float:
-        pass
+        return uniform(0.01, 0.2)
 
     def reset_all_offers(self):
-        pass
+        with self.conn.cursor() as cursor:
+            cursor.execute("""update PRODUKT set ANGEBOTSRABATT=0  where ANGEBOTSRABATT <> 0""")
+            self.conn.commit()
 
     def product_present(self, product_id):
         with self.conn.cursor() as cursor:
@@ -97,4 +103,5 @@ class Generator:
 if __name__ == "__main__":
     # create object
     generator = Generator()
+    generator.reset_all_offers()
     generator.start()
