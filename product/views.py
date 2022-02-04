@@ -1,3 +1,4 @@
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import Http404
 
@@ -37,7 +38,7 @@ class FamilyDetail(APIView):
         except ProductFamily.DoesNotExist:
             raise Http404
 
-    def get(self, request, family_slug, format=None):
+    def get(self, request, family_slug, page_index):
         family = self.get_object(family_slug)
         divisions = ProductDivision.objects.filter(product_family=family)
         products = Product.objects.filter(subcategory__product_category__product_division__in=divisions).exclude(
@@ -46,8 +47,11 @@ class FamilyDetail(APIView):
         serializer_family = ProductFamilySerializer(family)
         print(serializer_family)
         print(serializer_products)
+        p = Paginator(serializer_products.data, 7)
+        page1 = p.page(page_index)
+        products1 = page1.object_list
 
-        return Response({'products': serializer_products.data, 'family_data': serializer_family.data})
+        return Response({'products': products1, 'family_data': serializer_family.data})
 
 
 @api_view(['POST'])
