@@ -15,6 +15,7 @@ class LatestProductsList(APIView):
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
 
+
 class OneProduct(APIView):
     def get(self, request, format=None):
         product = Product.objects.first()
@@ -39,7 +40,8 @@ class FamilyDetail(APIView):
     def get(self, request, family_slug, format=None):
         family = self.get_object(family_slug)
         divisions = ProductDivision.objects.filter(product_family=family)
-        products = Product.objects.filter(subcategory__product_category__product_division__in=divisions).exclude(image__isnull=True).exclude(image="Kein Bild")[0:50]
+        products = Product.objects.filter(subcategory__product_category__product_division__in=divisions).exclude(
+            image__isnull=True).exclude(image="Kein Bild")[0:50]
         serializer_products = ProductSerializer(products, many=True)
         serializer_family = ProductFamilySerializer(family)
         print(serializer_family)
@@ -53,8 +55,11 @@ def search(request):
     query = request.data.get('query', '')
 
     if query:
-        products = Product.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+        products = Product.objects.filter(
+            (Q(name__icontains=query) | Q(description__icontains=query)) & Q(origin=1))
+
         serializer = ProductSerializer(products, many=True)
+        print(serializer.data)
         return Response(serializer.data)
     else:
         return Response({"products": []})

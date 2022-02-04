@@ -90,7 +90,7 @@ class Product(models.Model):
     recycle = models.FloatField(db_column="recyclebar")
     lowfat = models.FloatField(db_column="low_fat")
     discount = models.FloatField(db_column="angebotsrabatt")
-
+    origin = models.FloatField(db_column="datenherkunft_id")
     # date_added = models.DateTimeField(auto_now_add=True)
 
     class Meta:
