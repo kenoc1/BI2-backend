@@ -35,7 +35,7 @@ class Generator:
             self.conn.commit()
 
     def get_random_offer_value(self) -> float:
-        return uniform(0.01, 0.2)
+        return round(uniform(0.01, 0.5), 2)
 
     def reset_all_offers(self):
         with self.conn.cursor() as cursor:

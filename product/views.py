@@ -11,9 +11,11 @@ from .serializers import ProductSerializer, ProductSubcategorySerializer, Produc
 
 class LatestProductsList(APIView):
     def get(self, request, format=None):
-        products = Product.objects.exclude(image__isnull=True)[0:4]
+        products = Product.objects.exclude(image__isnull=True).order_by('-discount')[:10]
+        # products = Product.objects.exclude(image__isnull=True)[0:4]
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
+
 
 class OneProduct(APIView):
     def get(self, request, format=None):
@@ -39,7 +41,8 @@ class FamilyDetail(APIView):
     def get(self, request, family_slug, format=None):
         family = self.get_object(family_slug)
         divisions = ProductDivision.objects.filter(product_family=family)
-        products = Product.objects.filter(subcategory__product_category__product_division__in=divisions).exclude(image__isnull=True).exclude(image="Kein Bild")[0:50]
+        products = Product.objects.filter(subcategory__product_category__product_division__in=divisions).exclude(
+            image__isnull=True).exclude(image="Kein Bild")[0:50]
         serializer_products = ProductSerializer(products, many=True)
         serializer_family = ProductFamilySerializer(family)
         print(serializer_family)

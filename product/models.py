@@ -5,7 +5,6 @@ from django.core.files import File
 from django.db import models
 
 
-
 class ProductFamily(models.Model):
     product_family_id = models.FloatField(primary_key=True, db_column="produkt_familie_id")
     description = models.CharField(max_length=50, db_column="bezeichnung")
