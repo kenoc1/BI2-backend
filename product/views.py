@@ -1,3 +1,4 @@
+import json
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import Http404
@@ -6,6 +7,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
+from util.page_object import Page_object
 from .models import Product, ProductSubcategory, ProductFamily, ProductDivision, ProductCategory
 from .serializers import ProductSerializer, ProductSubcategorySerializer, ProductFamilySerializer
 
@@ -38,21 +40,23 @@ class FamilyDetail(APIView):
         except ProductFamily.DoesNotExist:
             raise Http404
 
-    def get(self, request, family_slug, page_index):
+    def get(self, request, family_slug):
+        if request.GET.get('pg') is None:
+            page_index = 1
+        else:
+            page_index = request.GET.get('pg')
+        print(page_index)
         family = self.get_object(family_slug)
         divisions = ProductDivision.objects.filter(product_family=family)
         products = Product.objects.filter(subcategory__product_category__product_division__in=divisions).exclude(
-            image__isnull=True).exclude(image="Kein Bild")[0:50]
-        serializer_products = ProductSerializer(products, many=True)
+            image__isnull=True).exclude(image="Kein Bild").order_by('product_id')
         serializer_family = ProductFamilySerializer(family)
-        print(serializer_family)
-        print(serializer_products)
-        p = Paginator(serializer_products.data, 7)
-        page1 = p.page(page_index)
-        products1 = page1.object_list
 
-        return Response({'products': products1, 'family_data': serializer_family.data})
-
+        serializer_products = ProductSerializer(products, many=True)
+        p = Paginator(serializer_products.data, 20)
+        current_page = p.page(page_index)
+        page_object = Page_object(current_page, p.num_pages)
+        return Response({'page': json.dumps(page_object.__dict__), 'family_data': serializer_family.data})
 
 @api_view(['POST'])
 def search(request):
