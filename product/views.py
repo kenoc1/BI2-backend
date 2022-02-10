@@ -14,10 +14,10 @@ from .serializers import ProductSerializer, ProductSubcategorySerializer, Produc
 
 class LatestProductsList(APIView):
     def get(self, request, format=None):
-        products = Product.objects.exclude(image__isnull=True)[0:4]
+        products = Product.objects.exclude(image__isnull=True).order_by('-discount')[:10]
+        # products = Product.objects.exclude(image__isnull=True)[0:4]
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
-
 
 class OneProduct(APIView):
     def get(self, request, format=None):
@@ -49,7 +49,8 @@ class FamilyDetail(APIView):
         family = self.get_object(family_slug)
         divisions = ProductDivision.objects.filter(product_family=family)
         products = Product.objects.filter(subcategory__product_category__product_division__in=divisions).exclude(
-            image__isnull=True).exclude(image="Kein Bild").order_by('product_id')
+            image__isnull=True).exclude(image="Kein Bild")[0:50]
+        serializer_products = ProductSerializer(products, many=True)
         serializer_family = ProductFamilySerializer(family)
 
         serializer_products = ProductSerializer(products, many=True)
@@ -68,7 +69,6 @@ def search(request):
             image__isnull=True).exclude(image="Kein Bild")[0:20]
 
         serializer = ProductSerializer(products, many=True)
-        print(serializer.data)
         return Response(serializer.data)
     else:
         return Response({"products": []})

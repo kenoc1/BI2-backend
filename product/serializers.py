@@ -35,7 +35,6 @@ class ProductSubcategorySerializer(serializers.ModelSerializer):
 
 
 class ProductFamilySerializer(serializers.ModelSerializer):
-
     class Meta:
         model = ProductFamily
         fields = (
