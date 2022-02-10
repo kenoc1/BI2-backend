@@ -15,7 +15,7 @@ class Generator:
         password = os.getenv('ORACLE_PASSWORD_DB')
         dsn_tns = cx_Oracle.makedsn('134.106.56.44', '1521',
                                     service_name='dbprak2')  # if needed, place an 'r' before any parameter in order to address special characters such as '\'.
-        self.conn = cx_Oracle.connect(user=r'"bi21_onfi2"', password=password,
+        self.conn = cx_Oracle.connect(user=r'"BI21"', password=password,
                                       dsn=dsn_tns)  # if needed, place an 'r' before any parameter in order to address special characters such as '\'. For example, if your user name contains '\', you'll need to place 'r' before the user name: user=r'User Name'
 
         print("Database version:", self.conn.version)
