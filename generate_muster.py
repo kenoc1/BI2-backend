@@ -91,13 +91,16 @@ class InsertOrderPositions:
 
         # # 112 = Tablet-PC
         # # 4063 = PigTail Frozen Chicken Wings
+        # # 212 = High Top Oranges
         with self.con_master.cursor() as cursor:
             i = 30000
             while i > 20000:
                 cursor.execute(
                     f"""INSERT INTO BESTELLPOSITION(Produkt_ID, Bestellung_ID, Menge) VALUES(112, {i}, 1)""")
                 cursor.execute(
-                    f"""INSERT INTO BESTELLPOSITION(Produkt_ID, Bestellung_ID, Menge) VALUES(4063, {i} 1)""")
+                    f"""INSERT INTO BESTELLPOSITION(Produkt_ID, Bestellung_ID, Menge) VALUES(4063, {i}, 1)""")
+                cursor.execute(
+                    f"""INSERT INTO BESTELLPOSITION(Produkt_ID, Bestellung_ID, Menge) VALUES(212, {i}, 1)""")
                 self.con_master.commit()
                 i -= 1
 
