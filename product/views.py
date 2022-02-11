@@ -19,6 +19,7 @@ class LatestProductsList(APIView):
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
 
+
 class OneProduct(APIView):
     def get(self, request, format=None):
         product = Product.objects.first()
@@ -49,8 +50,7 @@ class FamilyDetail(APIView):
         family = self.get_object(family_slug)
         divisions = ProductDivision.objects.filter(product_family=family)
         products = Product.objects.filter(subcategory__product_category__product_division__in=divisions).exclude(
-            image__isnull=True).exclude(image="Kein Bild")[0:50]
-        serializer_products = ProductSerializer(products, many=True)
+            image__isnull=True).exclude(image="Kein Bild")
         serializer_family = ProductFamilySerializer(family)
 
         serializer_products = ProductSerializer(products, many=True)
@@ -61,6 +61,7 @@ class FamilyDetail(APIView):
 
 @api_view(['POST'])
 def search(request):
+    page_index = request.data.get('pg', 1)
     query = request.data.get('query', '')
 
     if query:
@@ -68,7 +69,11 @@ def search(request):
             (Q(name__icontains=query) | Q(description__icontains=query)) & Q(origin=1)).exclude(
             image__isnull=True).exclude(image="Kein Bild")[0:20]
 
+        print(Product.objects)
         serializer = ProductSerializer(products, many=True)
-        return Response(serializer.data)
+        p = Paginator(serializer.data, 20)
+        current_page = p.page(page_index)
+        page_object = Page_object(current_page, p.num_pages)
+        return Response({'page': json.dumps(page_object.__dict__)})
     else:
-        return Response({"products": []})
+        return Response({"page": []})
