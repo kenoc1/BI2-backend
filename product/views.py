@@ -66,8 +66,7 @@ def search(request):
 
     if query:
         products = Product.objects.filter(
-            (Q(name__icontains=query) | Q(description__icontains=query)) & Q(origin=1)).exclude(
-            image__isnull=True).exclude(image="Kein Bild")[0:20]
+            (Q(name__icontains=query) | Q(description__icontains=query)) & Q(origin=1))
 
         print(Product.objects)
         serializer = ProductSerializer(products, many=True)
