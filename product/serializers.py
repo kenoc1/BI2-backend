@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import ProductSubcategory, Product, ProductFamily
+from .models import ProductSubcategory, Product, ProductFamily, ProductCategory, ProductDivision
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -33,9 +33,9 @@ class ProductSubcategorySerializer(serializers.ModelSerializer):
 
 class ProductCategorySerializer(serializers.ModelSerializer):
     class Meta:
-        model = ProductSubcategory
+        model = ProductCategory
         fields = (
-            "product_subcategory_id",
+            "product_category_id",
             "description",
             "get_absolute_url",
         )
@@ -43,9 +43,9 @@ class ProductCategorySerializer(serializers.ModelSerializer):
 
 class ProductDivisionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ProductSubcategory
+        model = ProductDivision
         fields = (
-            "product_subcategory_id",
+            "product_division_id",
             "description",
             "get_absolute_url",
         )

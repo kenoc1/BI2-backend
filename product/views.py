@@ -35,20 +35,19 @@ class ProductDetail(APIView):
 
 class Categories(APIView):
     def get(self, request, format=None):
-        test = 0
         families = []
-        divisions = {}
-        categories = {}
         for family in ProductFamily.objects.all():
+            divisions = []
             for division in ProductDivision.objects.filter(product_family=family):
+                categories = []
                 for category in ProductCategory.objects.filter(product_division=division):
-                    subcategories = ProductSubcategory.objects.filter(product_category=category)
-                    categories[category] = subcategories
-
-                divisions[division] = categories
-        print(divisions)
-
-        return Response({'test': test})
+                    subcategories = []
+                    for subcategory in ProductSubcategory.objects.filter(product_category=category):
+                        subcategories.append({'description': subcategory.description, 'slug': subcategory.get_absolute_url()})
+                    categories.append({'description': category.description, 'slug': category.get_absolute_url(), 'subcategories': subcategories})
+                divisions.append({'description': division.description, 'slug': division.get_absolute_url(), 'categories': categories})
+            families.append({'description': family.description, 'slug': family.get_absolute_url(), 'divisions': divisions})
+        return Response(families)
 
 
 class FamilyDetail(APIView):

@@ -10,5 +10,5 @@ urlpatterns = [
     url(r'^products/(?P<family_slug>[a-z0-9-+()]+)/(?P<division_slug>[a-z0-9-+()]+)/$', views.DivisionDetail.as_view()),
     url(r'^products/(?P<family_slug>[a-z0-9-+()]+)/(?P<division_slug>[a-z0-9-+()]+)/(?P<category_slug>[a-z0-9-+()]+)/$', views.CategoryDetail.as_view()),
     url(r'^products/(?P<family_slug>[a-z0-9-+()]+)/(?P<division_slug>[a-z0-9-+()]+)/(?P<category_slug>[a-z0-9-+()]+)/(?P<subcategory_slug>[a-z0-9-+()]+)/$', views.SubcategoryDetail.as_view()),
-    path('categories', views.Categories.as_view()),
+    path('categories/', views.Categories.as_view()),
 ]
