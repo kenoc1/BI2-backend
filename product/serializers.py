@@ -22,15 +22,32 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class ProductSubcategorySerializer(serializers.ModelSerializer):
-    products = ProductSerializer(many=True)
-
     class Meta:
         model = ProductSubcategory
         fields = (
             "product_subcategory_id",
             "description",
             "get_absolute_url",
-            "get_products",
+        )
+
+
+class ProductCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductSubcategory
+        fields = (
+            "product_subcategory_id",
+            "description",
+            "get_absolute_url",
+        )
+
+
+class ProductDivisionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductSubcategory
+        fields = (
+            "product_subcategory_id",
+            "description",
+            "get_absolute_url",
         )
 
 
@@ -41,5 +58,4 @@ class ProductFamilySerializer(serializers.ModelSerializer):
             "product_family_id",
             "description",
             "get_absolute_url",
-
         )

@@ -11,7 +11,7 @@ class ProductFamily(models.Model):
     slug = models.SlugField(default="test")
 
     class Meta:
-        managed = False
+        ordering = ('description',)
         db_table = 'produkt_familie'
 
     def __str__(self):
@@ -29,7 +29,7 @@ class ProductDivision(models.Model):
     slug = models.SlugField(default="test")
 
     class Meta:
-        managed = False
+        ordering = ('description',)
         db_table = 'produkt_sparte'
 
     def __str__(self):
@@ -47,7 +47,7 @@ class ProductCategory(models.Model):
     slug = models.SlugField(default="test")
 
     class Meta:
-        managed = False
+        ordering = ('description',)
         db_table = 'produkt_kategorie'
 
     def __str__(self):
