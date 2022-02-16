@@ -1,3 +1,5 @@
+import json
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import Http404
 
@@ -8,13 +10,15 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
+from util.page_object import Page_object
 from .models import Product, ProductSubcategory, ProductFamily, ProductDivision, ProductCategory
 from .serializers import ProductSerializer, ProductSubcategorySerializer, ProductFamilySerializer
 
 
 class LatestProductsList(APIView):
     def get(self, request, format=None):
-        products = Product.objects.exclude(image__isnull=True)[0:4]
+        products = Product.objects.exclude(image__isnull=True).order_by('-discount')[:10]
+        # products = Product.objects.exclude(image__isnull=True)[0:4]
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
 
@@ -51,32 +55,41 @@ class FamilyDetail(APIView):
         except ProductFamily.DoesNotExist:
             raise Http404
 
-    def get(self, request, family_slug, format=None):
+    def get(self, request, family_slug):
+        if request.GET.get('pg') is None:
+            page_index = 1
+        else:
+            page_index = request.GET.get('pg')
+        print(page_index)
         family = self.get_object(family_slug)
         divisions = ProductDivision.objects.filter(product_family=family)
         products = Product.objects.filter(subcategory__product_category__product_division__in=divisions).exclude(
-            image__isnull=True).exclude(image="Kein Bild")[0:50]
-        serializer_products = ProductSerializer(products, many=True)
+            image__isnull=True).exclude(image="Kein Bild")
         serializer_family = ProductFamilySerializer(family)
-        print(serializer_family)
-        print(serializer_products)
 
-        return Response({'products': serializer_products.data, 'family_data': serializer_family.data})
-
+        serializer_products = ProductSerializer(products, many=True)
+        p = Paginator(serializer_products.data, 20)
+        current_page = p.page(page_index)
+        page_object = Page_object(current_page, p.num_pages)
+        return Response({'page': json.dumps(page_object.__dict__), 'family_data': serializer_family.data})
 
 @api_view(['POST'])
 def search(request):
+    page_index = request.data.get('pg', 1)
     query = request.data.get('query', '')
 
     if query:
         products = Product.objects.filter(
-            (Q(name__icontains=query) | Q(description__icontains=query)) & Q(origin=1))[0:20]
+            (Q(name__icontains=query) | Q(description__icontains=query)) & Q(origin=1))
 
+        print(Product.objects)
         serializer = ProductSerializer(products, many=True)
-        print(serializer.data)
-        return Response(serializer.data)
+        p = Paginator(serializer.data, 20)
+        current_page = p.page(page_index)
+        page_object = Page_object(current_page, p.num_pages)
+        return Response({'page': json.dumps(page_object.__dict__)})
     else:
-        return Response({"products": []})
+        return Response({"page": []})
 
 
 def get_product_by_id(id):
