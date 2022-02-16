@@ -1,4 +1,5 @@
 import json
+import re
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import Http404
@@ -33,17 +34,15 @@ class OneProduct(APIView):
 class ProductDetail(APIView):
     def get(self, request, product_slug, format=None):
         product = Product.objects.filter(Q(slug=product_slug) & Q(origin=1))[:1].get()
-        print("now")
-        print(product)
-        print(product.product_id)
         assosiations = get_assosiation(product.product_id)
-        print(assosiations)
+        if len(assosiations) < 10:
+            assosiations = add_discounts(assosiations)
 
         serializer_product = ProductSerializer(product)
         print(serializer_product.data)
+
         serializer_assosiations = ProductSerializer(assosiations, many=True)
         print(serializer_assosiations.data)
-
 
         return Response({'product': serializer_product.data, 'assosiations': serializer_assosiations.data})
 
@@ -60,7 +59,6 @@ class FamilyDetail(APIView):
             page_index = 1
         else:
             page_index = request.GET.get('pg')
-        print(page_index)
         family = self.get_object(family_slug)
         divisions = ProductDivision.objects.filter(product_family=family)
         products = Product.objects.filter(subcategory__product_category__product_division__in=divisions).exclude(
@@ -82,7 +80,6 @@ def search(request):
         products = Product.objects.filter(
             (Q(name__icontains=query) | Q(description__icontains=query)) & Q(origin=1))
 
-        print(Product.objects)
         serializer = ProductSerializer(products, many=True)
         p = Paginator(serializer.data, 20)
         current_page = p.page(page_index)
@@ -111,13 +108,25 @@ def get_assosiation(product_id):
         products = get_products_by_ids(get_assosiations_from_db(product_id))
     return products
 
+
+def add_discounts(assosiations):
+    products = Product.objects.exclude(image__isnull=True).order_by('-discount')[:10]
+    for product in products:
+        assosiations.append(product)
+
+    return assosiations[:10]
+
+
 def get_assosiations_from_db(product_id):
     assosiations = []
     with connections['oracle_db'].cursor() as c:
-        c.execute(
-            f"SELECT CONSEQUENT_NAME FROM DM$VRBESTELLUNG WHERE extractValue(ANTECEDENT, '/itemset/item/item_name') ='{product_id}' FETCH FIRST 10 ROWS ONLY")  # use triple quotes if you want to spread your query across multiple lines
+        #c.execute(
+        #    f"SELECT CONSEQUENT_NAME FROM DM$VRBESTELLUNG WHERE extractValue(ANTECEDENT, '/itemset/item/item_name') ='{product_id}' FETCH FIRST 10 ROWS ONLY")  # use triple quotes if you want to spread your query across multiple lines
+        sql = "SELECT ITEMS_ADD FROM ASSOBESTELLUNG WHERE ITEMS_BASE = '{"+ str(product_id) +"}' ORDER BY CONFIDENCE DESC FETCH FIRST 10 ROWS ONLY"
+        c.execute(sql)
         for row in c:
-            assosiations.append(row[0])
+            assosiations.append(re.search(r'\d+', row[0]).group())
+            print(re.search(r'\d+', row[0]).group())
 
     return assosiations
 
