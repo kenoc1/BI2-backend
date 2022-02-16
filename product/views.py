@@ -11,7 +11,7 @@ from .serializers import ProductSerializer, ProductSubcategorySerializer, Produc
 
 class LatestProductsList(APIView):
     def get(self, request, format=None):
-        products = Product.objects.exclude(image__isnull=True).order_by('-discount')[:10]
+        products = Product.objects.exclude(image__isnull=True).order_by('-discount')[:56]
         # products = Product.objects.exclude(image__isnull=True)[0:4]
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)

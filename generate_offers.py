@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-PRODUCT_OFFER_MAX = 100
+PRODUCT_OFFER_MAX = 56
 
 
 class Generator:
