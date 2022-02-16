@@ -4,7 +4,6 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import Http404
 
-import cx_Oracle
 from django.db import connections
 
 from rest_framework.views import APIView
@@ -34,17 +33,17 @@ class OneProduct(APIView):
 class ProductDetail(APIView):
     def get(self, request, product_slug, format=None):
         product = Product.objects.filter(Q(slug=product_slug) & Q(origin=1))[:1].get()
-        assosiations = get_assosiation(product.product_id)
-        if len(assosiations) < 10:
-            assosiations = add_discounts(assosiations)
+        associations = get_association(product.product_id)
+        if len(associations) < 10:
+            associations = add_discounts(associations)
 
         serializer_product = ProductSerializer(product)
         print(serializer_product.data)
 
-        serializer_assosiations = ProductSerializer(assosiations, many=True)
-        print(serializer_assosiations.data)
+        serializer_associations = ProductSerializer(associations, many=True)
+        print(serializer_associations.data)
 
-        return Response({'product': serializer_product.data, 'assosiations': serializer_assosiations.data})
+        return Response({'product': serializer_product.data, 'associations': serializer_associations.data})
 
 
 class FamilyDetail(APIView):
@@ -71,6 +70,7 @@ class FamilyDetail(APIView):
         page_object = Page_object(current_page, p.num_pages)
         return Response({'page': json.dumps(page_object.__dict__), 'family_data': serializer_family.data})
 
+
 @api_view(['POST'])
 def search(request):
     page_index = request.data.get('pg', 1)
@@ -89,46 +89,42 @@ def search(request):
         return Response({"page": []})
 
 
-def get_product_by_id(id):
-    product = Product.objects.filter(Q(product_id=id) & Q(origin=1))[:1].get()
+def get_product_by_id(requested_product_id):
+    product = Product.objects.filter(Q(product_id=requested_product_id) & Q(origin=1))[:1].get()
     return product
 
 
 def get_products_by_ids(product_ids):
     products = []
-    for id in product_ids:
-        products.append(get_product_by_id(id))
+    for requested_product_id in product_ids:
+        products.append(get_product_by_id(requested_product_id))
 
     return products
 
-def get_assosiation(product_id):
+
+def get_association(product_id):
     products = []
 
     if product_id:
-        products = get_products_by_ids(get_assosiations_from_db(product_id))
+        products = get_products_by_ids(get_associations_from_db(product_id))
     return products
 
 
-def add_discounts(assosiations):
+def add_discounts(associations):
     products = Product.objects.exclude(image__isnull=True).order_by('-discount')[:10]
     for product in products:
-        assosiations.append(product)
+        associations.append(product)
 
-    return assosiations[:10]
+    return associations[:10]
 
 
-def get_assosiations_from_db(product_id):
-    assosiations = []
+def get_associations_from_db(product_id):
+    associations = []
     with connections['oracle_db'].cursor() as c:
-        #c.execute(
-        #    f"SELECT CONSEQUENT_NAME FROM DM$VRBESTELLUNG WHERE extractValue(ANTECEDENT, '/itemset/item/item_name') ='{product_id}' FETCH FIRST 10 ROWS ONLY")  # use triple quotes if you want to spread your query across multiple lines
-        sql = "SELECT ITEMS_ADD FROM ASSOBESTELLUNG WHERE ITEMS_BASE = '{"+ str(product_id) +"}' ORDER BY CONFIDENCE DESC FETCH FIRST 10 ROWS ONLY"
+        sql = "SELECT ITEMS_ADD FROM ASSOBESTELLUNG WHERE ITEMS_BASE = '{" + str(
+            product_id) + "}' ORDER BY CONFIDENCE DESC FETCH FIRST 10 ROWS ONLY"
         c.execute(sql)
         for row in c:
-            assosiations.append(re.search(r'\d+', row[0]).group())
-            print(re.search(r'\d+', row[0]).group())
+            associations.append(re.search(r'\d+', row[0]).group())
 
-    return assosiations
-
-
-
+    return associations
