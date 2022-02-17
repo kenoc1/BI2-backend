@@ -55,6 +55,7 @@ INSTALLED_APPS = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
+    "http://192.168.178.45:8080",
     "https://orange-bay-0ff795603.1.azurestaticapps.net",
     "https://delightful-grass-007c8dd03.1.azurestaticapps.net"
 ]
@@ -103,7 +104,7 @@ DATABASES = {
     'oracle_db': {
         'ENGINE': 'django.db.backends.oracle',
         'NAME': 'dbprak2',
-        'USER': '"bi21_onfi2"',
+        'USER': '"BI21"',
         'PASSWORD': os.getenv('ORACLE_PASSWORD_DB'),
         'HOST': '134.106.56.44',
         'PORT': '1521',

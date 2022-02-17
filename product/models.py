@@ -5,7 +5,6 @@ from django.core.files import File
 from django.db import models
 
 
-
 class ProductFamily(models.Model):
     product_family_id = models.FloatField(primary_key=True, db_column="produkt_familie_id")
     description = models.CharField(max_length=50, db_column="bezeichnung")
@@ -74,6 +73,24 @@ class ProductSubcategory(models.Model):
 
     def get_absolute_url(self):
         return f'/{self.slug}/'
+
+
+#class ProductAssosiation(models.Model):
+    #product_envent=
+    #product_assoziate=
+    #confident=
+
+#    class Meta:
+        #db_table = 'produkt_assosiation'
+
+#    def get_assoziation_for_id(self, product_id):
+        product_assosiations = []
+
+ #       for assosiation in ProductAssosiation:
+ #           if product_id==assosiation.product_envent:
+ #               product_assosiations.append(assosiation)
+ #
+ #       return product_assosiations
 
 
 class Product(models.Model):
