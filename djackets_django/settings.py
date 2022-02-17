@@ -30,7 +30,10 @@ SECRET_KEY = 'f_)*$6xz#a7k(6ir&u@+tq8h@_t_9%3nr%9g5z4vdp#*a4)a*o'
 DEBUG = True
 
 ALLOWED_HOSTS = ['bi-backend.azurewebsites.net',
-                 'dev-bi-backend.azurewebsites.net', 'localhost', '127.0.0.1']
+                 'dev-bi-backend.azurewebsites.net',
+                 '134.106.56.44',
+                 'localhost',
+                 '127.0.0.1']
 
 STRIPE_SECRET_KEY = 'sk_test_51HIHiuKBJV2qeWbD4IBpAODack7r7r9LJ0Y65zSFx7jUUwgy2nfKEgQGvorv1p2xp7tgMsJ5N9EW7K1lBdPnFnyK00kdrS27cj'
 
