@@ -33,7 +33,7 @@ class OneProduct(APIView):
 class ProductDetail(APIView):
     def get(self, request, product_slug, format=None):
         product = Product.objects.filter(Q(slug=product_slug) & Q(origin=1))[:1].get()
-        associations = get_association(product.product_id)
+        associations = get_association(product.sku)
         if len(associations) < 10:
             associations = add_discounts(associations)
 
@@ -89,24 +89,24 @@ def search(request):
         return Response({"page": []})
 
 
-def get_product_by_id(requested_product_id):
-    product = Product.objects.filter(Q(product_id=requested_product_id) & Q(origin=1))[:1].get()
+def get_product_by_sku(req_sku):
+    product = Product.objects.filter(Q(sku=req_sku) & Q(origin=1))[:1].get()
     return product
 
 
-def get_products_by_ids(product_ids):
+def get_products_by_skus(skus):
     products = []
-    for requested_product_id in product_ids:
-        products.append(get_product_by_id(requested_product_id))
+    for sku in skus:
+        products.append(get_product_by_sku(sku))
 
     return products
 
 
-def get_association(product_id):
+def get_association(sku):
     products = []
 
-    if product_id:
-        products = get_products_by_ids(get_associations_from_db(product_id))
+    if sku:
+        products = get_products_by_skus(get_associations_from_db(sku))
     return products
 
 
@@ -118,11 +118,11 @@ def add_discounts(associations):
     return associations[:10]
 
 
-def get_associations_from_db(product_id):
+def get_associations_from_db(sku):
     associations = []
     with connections['oracle_db'].cursor() as c:
         sql = "SELECT ITEMS_ADD FROM ASSOBESTELLUNG WHERE ITEMS_BASE = '{" + str(
-            product_id) + "}' ORDER BY CONFIDENCE DESC FETCH FIRST 10 ROWS ONLY"
+            sku) + "}' ORDER BY CONFIDENCE DESC FETCH FIRST 10 ROWS ONLY"
         c.execute(sql)
         for row in c:
             associations.append(re.search(r'\d+', row[0]).group())
