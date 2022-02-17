@@ -13,12 +13,13 @@ from rest_framework.response import Response
 from .models import Order, OrderItem
 from .serializers import OrderSerializer, MyOrderSerializer
 
+
 @api_view(['POST'])
 @authentication_classes([authentication.TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 def checkout(request):
+    print(request.data)
     serializer = OrderSerializer(data=request.data)
-
     if serializer.is_valid():
         stripe.api_key = settings.STRIPE_SECRET_KEY
         paid_amount = sum(item.get('quantity') * item.get('product').price for item in serializer.validated_data['items'])
@@ -38,6 +39,7 @@ def checkout(request):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class OrdersList(APIView):
     authentication_classes = [authentication.TokenAuthentication]

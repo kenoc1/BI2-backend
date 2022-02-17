@@ -54,7 +54,7 @@ class ProductCategory(models.Model):
         return self.description
 
     def get_absolute_url(self):
-        return f'/{self.slug}/'
+        return f'/products/{self.slug}/'
 
 
 class ProductSubcategory(models.Model):
@@ -72,7 +72,7 @@ class ProductSubcategory(models.Model):
         return self.description
 
     def get_absolute_url(self):
-        return f'/{self.slug}/'
+        return f'/products/{self.slug}/'
 
 
 class Product(models.Model):
@@ -83,13 +83,13 @@ class Product(models.Model):
     slug = models.SlugField()
     description = models.CharField(max_length=500, blank=True, null=True, db_column="produktbeschreibung")
     price = models.FloatField(db_column="listenverkaufspreis")
-    image = models.CharField(db_column="produktbild_link", max_length=1000)
-    sku = models.FloatField(db_column="sku")
-    evaluation = models.FloatField(db_column="bewertung")
-    recycle = models.FloatField(db_column="recyclebar")
-    lowfat = models.FloatField(db_column="low_fat")
-    discount = models.FloatField(db_column="angebotsrabatt")
-    origin = models.FloatField(db_column="datenherkunft_id")
+    image = models.CharField(db_column="produktbild_link", max_length=1000, blank=True, null=True)
+    sku = models.FloatField(db_column="sku", blank=True, null=True)
+    evaluation = models.FloatField(db_column="bewertung", blank=True, null=True)
+    recycle = models.FloatField(db_column="recyclebar", blank=True, null=True)
+    lowfat = models.FloatField(db_column="low_fat", blank=True, null=True)
+    discount = models.FloatField(db_column="angebotsrabatt", blank=True, null=True)
+    origin = models.FloatField(db_column="datenherkunft_id", blank=True, null=True)
     # date_added = models.DateTimeField(auto_now_add=True)
 
     class Meta:

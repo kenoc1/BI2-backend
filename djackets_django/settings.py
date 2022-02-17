@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     'djoser',
 
     'product',
-    'order'
+    'order',
+    'customer'
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -98,10 +99,6 @@ WSGI_APPLICATION = 'djackets_django.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    },
-    'oracle_db': {
         'ENGINE': 'django.db.backends.oracle',
         'NAME': 'dbprak2',
         'USER': 'BI21',
@@ -110,8 +107,6 @@ DATABASES = {
         'PORT': '1521',
     }
 }
-
-DATABASE_ROUTERS = ['routers.db_routers.ProductRouter']
 
 
 # Password validation
