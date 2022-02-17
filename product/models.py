@@ -75,6 +75,24 @@ class ProductSubcategory(models.Model):
         return f'/{self.slug}/'
 
 
+#class ProductAssosiation(models.Model):
+    #product_envent=
+    #product_assoziate=
+    #confident=
+
+#    class Meta:
+        #db_table = 'produkt_assosiation'
+
+#    def get_assoziation_for_id(self, product_id):
+        product_assosiations = []
+
+ #       for assosiation in ProductAssosiation:
+ #           if product_id==assosiation.product_envent:
+ #               product_assosiations.append(assosiation)
+ #
+ #       return product_assosiations
+
+
 class Product(models.Model):
     product_id = models.FloatField(primary_key=True, db_column="produkt_id", default=1)
     subcategory = models.ForeignKey(ProductSubcategory, related_name='products', on_delete=models.CASCADE,
@@ -89,7 +107,7 @@ class Product(models.Model):
     recycle = models.FloatField(db_column="recyclebar")
     lowfat = models.FloatField(db_column="low_fat")
     discount = models.FloatField(db_column="angebotsrabatt")
-
+    origin = models.FloatField(db_column="datenherkunft_id")
     # date_added = models.DateTimeField(auto_now_add=True)
 
     class Meta:

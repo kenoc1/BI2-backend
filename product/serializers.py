@@ -16,7 +16,8 @@ class ProductSerializer(serializers.ModelSerializer):
             "sku",
             "recycle",
             "lowfat",
-            "discount"
+            "discount",
+            "origin"
         )
 
 
