@@ -18,7 +18,7 @@ class ProductFamily(models.Model):
         return self.description
 
     def get_absolute_url(self):
-        return f'/{self.slug}/'
+        return f'products/{self.slug}/'
 
 
 class ProductDivision(models.Model):
@@ -36,7 +36,7 @@ class ProductDivision(models.Model):
         return self.description
 
     def get_absolute_url(self):
-        return f'/{self.slug}/'
+        return f'/products/{self.product_family.slug}/{self.slug}/'
 
 
 class ProductCategory(models.Model):
@@ -54,7 +54,7 @@ class ProductCategory(models.Model):
         return self.description
 
     def get_absolute_url(self):
-        return f'/products/{self.slug}/'
+        return f'/products/{self.product_division.product_family.slug}/{self.product_division.slug}/{self.slug}'
 
 
 class ProductSubcategory(models.Model):
@@ -72,7 +72,7 @@ class ProductSubcategory(models.Model):
         return self.description
 
     def get_absolute_url(self):
-        return f'/products/{self.slug}/'
+        return f'/products/{self.product_category.product_division.product_family.slug}/{self.product_category.product_division.slug}/{self.product_category.slug}/{self.slug}/'
 
 
 class Product(models.Model):

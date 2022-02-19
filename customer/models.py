@@ -38,5 +38,3 @@ class CustomerAddress(models.Model):
     class Meta:
         managed = False
         db_table = 'kunde_adresse'
-
-

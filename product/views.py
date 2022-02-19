@@ -79,7 +79,9 @@ class DivisionDetail(APIView):
         except ProductDivision.DoesNotExist:
             raise Http404
 
-    def get(self, request, division_slug):
+    def get(self, request, family_slug, division_slug):
+        print(family_slug)
+        print(division_slug)
         page_index = get_page_index(request)
         division = self.get_object(division_slug)
         products = Product.objects.filter(subcategory__product_category__product_division__in=division).exclude(
