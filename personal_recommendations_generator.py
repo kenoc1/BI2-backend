@@ -12,7 +12,7 @@ BUY_AGAIN = 35
 PRODUCT = 45
 
 
-class Generator:
+class PersonalRecommendationsGetter:
     def __init__(self):
         password = os.getenv('ORACLE_PASSWORD_DB')
         dsn_tns = cx_Oracle.makedsn('134.106.56.44', '1521', service_name='dbprak2')
@@ -20,10 +20,28 @@ class Generator:
         print("Database version:", self.conn.version)
         pass
 
-    def get_associations_for_all_customers(self):
+    def save_associations_for_all_customers(self):
         customer_ids = []
+        with self.conn.cursor() as c:
+            sql1 = "DELETE FROM EMPF_PERSONENBEZOGEN"
+            c.execute(sql1)
+            sql2 = "SELECT KUNDE_ID FROM KUNDE FETCH FIRST 10 ROWS ONLY"
+            c.execute(sql2)
+            if c:
+                for row in c:
+                    customer_ids.append(row[0])
+            self.conn.commit()
         for customer_id in customer_ids:
-            self.get_assosiations_for_one_customer(customer_id)
+            associations_one_customer = self.get_associations_for_one_customer(customer_id)
+            self.write_associations_in_db_for_one_customer(associations_one_customer, customer_id)
+            print(f"customer with id {customer_id} done")
+
+    def write_associations_in_db_for_one_customer(self, associations_one_customer, customer_id):
+        for association in associations_one_customer:
+            with self.conn.cursor() as cursor:
+                sql = f"INSERT INTO EMPF_PERSONENBEZOGEN(KUNDE_ID, PRODUKT_SKU, MATCH) VALUES({customer_id}, {association.sku}, {association.match})"
+                cursor.execute(sql)
+        self.conn.commit()
 
     def get_associations_for_one_customer(self, customer_id):
         associations = []
@@ -47,7 +65,7 @@ class Generator:
             else:
                 associations.append(Association(association.sku, association.match / PRODUCT))
         associations.sort(key=lambda x: x.match, reverse=True)
-        return associations
+        return associations[:20]
 
     def get_associations_last_orders(self, customer_id):
         associations = []
@@ -188,11 +206,12 @@ class Association:
 
 
 if __name__ == "__main__":
-    generator = Generator()
+    generator = PersonalRecommendationsGetter()
     # generator.get_associations_buy_again(2774)
     # generator.get_associations_last_orders(2774)
     # generator.get_associations_for_sex(2774)
-    associations = generator.get_associations_for_one_customer(2774)
+    # associations = generator.get_associations_for_one_customer(2774)
+    generator.save_associations_for_all_customers()
 
-    for association in associations:
-        print(association)
+    # for association in associations:
+    #    print(association)
