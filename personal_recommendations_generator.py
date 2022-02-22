@@ -22,26 +22,34 @@ class PersonalRecommendationsGetter:
 
     def save_associations_for_all_customers(self):
         customer_ids = []
-        with self.conn.cursor() as c:
-            sql1 = "DELETE FROM EMPF_PERSONENBEZOGEN"
-            c.execute(sql1)
-            sql2 = "SELECT KUNDE_ID FROM KUNDE FETCH FIRST 10 ROWS ONLY"
-            c.execute(sql2)
-            if c:
-                for row in c:
-                    customer_ids.append(row[0])
-            self.conn.commit()
+        try:
+            with self.conn.cursor() as c:
+                sql1 = "DELETE FROM EMPF_PERSONENBEZOGEN"
+                c.execute(sql1)
+                sql2 = "SELECT KUNDE_ID FROM KUNDE FETCH FIRST 2 ROWS ONLY"
+                c.execute(sql2)
+                if c:
+                    for row in c:
+                        customer_ids.append(row[0])
+                self.conn.commit()
+        except cx_Oracle.Error as error:
+            print('Error occurred:')
+            print(error)
         for customer_id in customer_ids:
             associations_one_customer = self.get_associations_for_one_customer(customer_id)
             self.write_associations_in_db_for_one_customer(associations_one_customer, customer_id)
             print(f"customer with id {customer_id} done")
 
     def write_associations_in_db_for_one_customer(self, associations_one_customer, customer_id):
-        for association in associations_one_customer:
-            with self.conn.cursor() as cursor:
-                sql = f"INSERT INTO EMPF_PERSONENBEZOGEN(KUNDE_ID, PRODUKT_SKU, MATCH) VALUES({customer_id}, {association.sku}, {association.match})"
-                cursor.execute(sql)
-        self.conn.commit()
+        try:
+            for association in associations_one_customer:
+                with self.conn.cursor() as cursor:
+                    sql = f"INSERT INTO EMPF_PERSONENBEZOGEN(KUNDE_ID, PRODUKT_SKU, MATCH) VALUES({customer_id}, {association.sku}, {association.match})"
+                    cursor.execute(sql)
+            self.conn.commit()
+        except cx_Oracle.Error as error:
+            print('Error occurred:')
+            print(error)
 
     def get_associations_for_one_customer(self, customer_id):
         associations = []
@@ -70,28 +78,32 @@ class PersonalRecommendationsGetter:
     def get_associations_last_orders(self, customer_id):
         associations = []
         last_orders = self.get_last_ordered_products(customer_id)
-        for product_sku in last_orders:
-            associations_one_product = []
-            with self.conn.cursor() as c:
-                sql = "SELECT ITEMS_ADD, LIFT FROM ASSOBESTELLUNG WHERE ITEMS_BASE = '{" + str(
+        try:
+            for product_sku in last_orders:
+                associations_one_product = []
+                with self.conn.cursor() as c:
+                    sql = "SELECT ITEMS_ADD, LIFT FROM ASSOBESTELLUNG WHERE ITEMS_BASE = '{" + str(
                     product_sku) + "}' ORDER BY LIFT DESC FETCH FIRST 1 ROWS ONLY"
-                c.execute(sql)
-                row = c.fetchone()
-                if row:
-                    best_lift = float(row[1])
-            with self.conn.cursor() as c:
-                sql = "SELECT ITEMS_ADD, LIFT FROM ASSOBESTELLUNG WHERE ITEMS_BASE = '{" + str(
+                    c.execute(sql)
+                    row = c.fetchone()
+                    if row:
+                        best_lift = float(row[1])
+                with self.conn.cursor() as c:
+                    sql = "SELECT ITEMS_ADD, LIFT FROM ASSOBESTELLUNG WHERE ITEMS_BASE = '{" + str(
                     product_sku) + "}' ORDER BY LIFT DESC FETCH FIRST 50 ROWS ONLY"
-                c.execute(sql)
-                if c:
-                    for row in c:
-                        association = Association(re.search(r'\d+', row[0]).group(), row[1] / best_lift)
-                        associations_one_product.append(association)
-            for product in associations_one_product:
-                if any(x.sku == product.sku for x in associations):
-                    pass
-                else:
-                    associations.append(product)
+                    c.execute(sql)
+                    if c:
+                        for row in c:
+                            association = Association(re.search(r'\d+', row[0]).group(), row[1] / best_lift)
+                            associations_one_product.append(association)
+                for product in associations_one_product:
+                    if any(x.sku == product.sku for x in associations):
+                        pass
+                    else:
+                        associations.append(product)
+        except cx_Oracle.Error as error:
+            print('Error occurred:')
+            print(error)
         return list(set(associations))[:50]
 
     def get_last_ordered_products(self, customer_id):
@@ -116,8 +128,9 @@ class PersonalRecommendationsGetter:
 
     def get_associations_buy_again(self, customer_id):
         associations = []
-        with self.conn.cursor() as cursor:
-            cursor.execute(f"""SELECT count(*) AS ANZAHL, P.SKU
+        try:
+            with self.conn.cursor() as cursor:
+                cursor.execute(f"""SELECT count(*) AS ANZAHL, P.SKU
                                     FROM PRODUKT P 
                                         JOIN BESTELLPOSITION BP ON P.PRODUKT_ID = BP.PRODUKT_ID
                                         JOIN BESTELLUNG B ON B.BESTELLUNG_ID=BP.BESTELLUNG_ID
@@ -127,9 +140,9 @@ class PersonalRecommendationsGetter:
                                     GROUP BY P.SKU
                                     ORDER BY ANZAHL DESC
                                     FETCH FIRST 1 ROWS ONLY""")
-            row = cursor.fetchone()
-            most_orders = row[0]
-        try:
+                row = cursor.fetchone()
+                most_orders = row[0]
+
             with self.conn.cursor() as cursor:
                 cursor.execute(f"""SELECT count(*) AS ANZAHL, P.SKU
                                         FROM PRODUKT P 
@@ -164,35 +177,43 @@ class PersonalRecommendationsGetter:
         return list(set(associations))[:50]
 
     def get_sex_for_customer(self, customer_id):
-        with self.conn.cursor() as cursor:
-            cursor.execute(f"SELECT ANREDE FROM KUNDE WHERE KUNDE_ID = {customer_id}")
-            row = cursor.fetchone()
-            sex = row[0]
+        try:
+            with self.conn.cursor() as cursor:
+                cursor.execute(f"SELECT ANREDE FROM KUNDE WHERE KUNDE_ID = {customer_id}")
+                row = cursor.fetchone()
+                sex = row[0]
+        except cx_Oracle.Error as error:
+            print('Error occurred:')
+            print(error)
         return sex
 
     def get_associations(self, last_orders, db_table):
         associations = []
-        with self.conn.cursor() as c:
-            sql = f"SELECT ITEMS_ADD, LIFT FROM {db_table} ORDER BY LIFT DESC FETCH FIRST 1 ROWS ONLY"
-            c.execute(sql)
-            row = c.fetchone()
-            if row:
-                best_lift = float(row[1])
-        for sku in last_orders:
-            associations_one_product = []
+        try:
             with self.conn.cursor() as c:
-                sql2 = ("SELECT ITEMS_ADD, LIFT FROM " + db_table + " WHERE ITEMS_BASE = '{" +
+                sql = f"SELECT ITEMS_ADD, LIFT FROM {db_table} ORDER BY LIFT DESC FETCH FIRST 1 ROWS ONLY"
+                c.execute(sql)
+                row = c.fetchone()
+                if row:
+                    best_lift = float(row[1])
+            for sku in last_orders:
+                associations_one_product = []
+                with self.conn.cursor() as c:
+                    sql2 = ("SELECT ITEMS_ADD, LIFT FROM " + db_table + " WHERE ITEMS_BASE = '{" +
                         str(sku) + "}'ORDER BY LIFT DESC FETCH FIRST 50 ROWS ONLY")
-                c.execute(sql2)
-                if c:
-                    for row in c:
-                        association = Association(re.search(r'\d+', row[0]).group(), row[1] / best_lift)
-                        associations_one_product.append(association)
-                for product in associations_one_product:
-                    if any(x.sku == product.sku for x in associations):
-                        pass
-                    else:
-                        associations.append(product)
+                    c.execute(sql2)
+                    if c:
+                        for row in c:
+                            association = Association(re.search(r'\d+', row[0]).group(), row[1] / best_lift)
+                            associations_one_product.append(association)
+                    for product in associations_one_product:
+                        if any(x.sku == product.sku for x in associations):
+                            pass
+                        else:
+                            associations.append(product)
+        except cx_Oracle.Error as error:
+            print('Error occurred:')
+            print(error)
         return associations
 
 
