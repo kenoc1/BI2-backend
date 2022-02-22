@@ -49,21 +49,21 @@ class PersonalRecommendationsGetter:
         associations_buy_again = self.get_associations_buy_again(customer_id)
         associations_last_orders = self.get_associations_last_orders(customer_id)
         for association in associations_sex:
-            associations.append(Association(association.sku, association.match / SEX))
+            associations.append(Association(association.sku, association.match*SEX / 100))
         for association in associations_buy_again:
             if any(x.sku == association.sku for x in associations):
                 for a in associations:
                     if a.sku == association.sku:
-                        a.match = a.match + (association.match / BUY_AGAIN)
+                        a.match = a.match + (association.match*BUY_AGAIN / 100)
             else:
-                associations.append(Association(association.sku, association.match / BUY_AGAIN))
+                associations.append(Association(association.sku, association.match*BUY_AGAIN / 100))
         for association in associations_last_orders:
             if any(x.sku == association.sku for x in associations):
                 for a in associations:
                     if a.sku == association.sku:
-                        a.match = a.match + (association.match / PRODUCT)
+                        a.match = a.match + (association.match*PRODUCT / 100)
             else:
-                associations.append(Association(association.sku, association.match / PRODUCT))
+                associations.append(Association(association.sku, association.match*PRODUCT / 100))
         associations.sort(key=lambda x: x.match, reverse=True)
         return associations[:20]
 
@@ -81,7 +81,7 @@ class PersonalRecommendationsGetter:
                     best_lift = float(row[1])
             with self.conn.cursor() as c:
                 sql = "SELECT ITEMS_ADD, LIFT FROM ASSOBESTELLUNG WHERE ITEMS_BASE = '{" + str(
-                    product_sku) + "}' ORDER BY LIFT DESC FETCH FIRST 10 ROWS ONLY"
+                    product_sku) + "}' ORDER BY LIFT DESC FETCH FIRST 50 ROWS ONLY"
                 c.execute(sql)
                 if c:
                     for row in c:
@@ -182,7 +182,7 @@ class PersonalRecommendationsGetter:
             associations_one_product = []
             with self.conn.cursor() as c:
                 sql2 = ("SELECT ITEMS_ADD, LIFT FROM " + db_table + " WHERE ITEMS_BASE = '{" +
-                        str(sku) + "}'ORDER BY LIFT DESC FETCH FIRST 1 ROWS ONLY")
+                        str(sku) + "}'ORDER BY LIFT DESC FETCH FIRST 50 ROWS ONLY")
                 c.execute(sql2)
                 if c:
                     for row in c:
