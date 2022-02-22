@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'django_crontab',
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
@@ -51,6 +52,11 @@ INSTALLED_APPS = [
 
     'product',
     'order'
+]
+
+#“At 00:00 on Sunday every week.”
+CRONJOBS = [
+    ('0 0 * * 0', 'BI2-backend.personal_recommendations_generator.save_associations_for_all_customers')
 ]
 
 CORS_ALLOWED_ORIGINS = [
