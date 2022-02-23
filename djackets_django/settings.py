@@ -55,8 +55,10 @@ INSTALLED_APPS = [
 ]
 
 #“At 00:00 on Sunday every week.”
+#“At 00:00 on Monday every week.”
 CRONJOBS = [
-    ('0 0 * * 0', 'BI2-backend.personal_recommendations_generator.save_associations_for_all_customers')
+    ('0 0 * * 0', 'BI2-backend.personal_recommendations_generator.save_associations_for_all_customers'),
+    ('0 0 * * 1', 'BI2-backend.generate_offers.start'),
 ]
 
 CORS_ALLOWED_ORIGINS = [

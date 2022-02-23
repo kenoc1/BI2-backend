@@ -22,7 +22,7 @@ class Generator:
         pass
 
     def start(self):
-        pass
+        self.reset_all_offers()
         for x in range(PRODUCT_OFFER_MAX):
             self.set_random(self.get_random_product(), self.get_random_offer_value())
 
@@ -103,5 +103,4 @@ class Generator:
 if __name__ == "__main__":
     # create object
     generator = Generator()
-    generator.reset_all_offers()
     generator.start()
