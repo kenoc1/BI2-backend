@@ -26,7 +26,7 @@ class PersonalRecommendationsGetter:
             with self.conn.cursor() as c:
                 sql1 = "DELETE FROM EMPF_PERSONENBEZOGEN"
                 c.execute(sql1)
-                sql2 = "SELECT KUNDE_ID FROM KUNDE FETCH FIRST 2 ROWS ONLY"
+                sql2 = "SELECT KUNDE_ID FROM KUNDE WHERE KUNDE_ID"
                 c.execute(sql2)
                 if c:
                     for row in c:
@@ -44,6 +44,8 @@ class PersonalRecommendationsGetter:
         try:
             for association in associations_one_customer:
                 with self.conn.cursor() as cursor:
+                    sql1 = f"DELETE FROM EMPF_PERSONENBEZOGEN WHERE KUNDE_ID = {customer_id}"
+                    cursor.execute(sql1)
                     sql = f"INSERT INTO EMPF_PERSONENBEZOGEN(KUNDE_ID, PRODUKT_SKU, MATCH) VALUES({customer_id}, {association.sku}, {association.match})"
                     cursor.execute(sql)
             self.conn.commit()
@@ -128,6 +130,7 @@ class PersonalRecommendationsGetter:
 
     def get_associations_buy_again(self, customer_id):
         associations = []
+        most_orders = 1
         try:
             with self.conn.cursor() as cursor:
                 cursor.execute(f"""SELECT count(*) AS ANZAHL, P.SKU
@@ -141,7 +144,8 @@ class PersonalRecommendationsGetter:
                                     ORDER BY ANZAHL DESC
                                     FETCH FIRST 1 ROWS ONLY""")
                 row = cursor.fetchone()
-                most_orders = row[0]
+                if row:
+                    most_orders = row[0]
 
             with self.conn.cursor() as cursor:
                 cursor.execute(f"""SELECT count(*) AS ANZAHL, P.SKU
@@ -228,11 +232,11 @@ class Association:
 
 if __name__ == "__main__":
     generator = PersonalRecommendationsGetter()
-    # generator.get_associations_buy_again(2774)
-    # generator.get_associations_last_orders(2774)
-    # generator.get_associations_for_sex(2774)
+
+    # one
     # associations = generator.get_associations_for_one_customer(2774)
+    # generator.write_associations_in_db_for_one_customer(2774)
+
+    # all
     generator.save_associations_for_all_customers()
 
-    # for association in associations:
-    #    print(association)
