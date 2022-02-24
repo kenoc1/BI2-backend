@@ -23,6 +23,27 @@ class LatestProductsList(APIView):
         return Response(serializer.data)
 
 
+class PersonalRecommendationsList(APIView):
+    def get(self, request, format=None):
+        product_skus = []
+        customer_id = 5769  # TODO: get id from logged user
+
+        with connections['oracle_db'].cursor() as c:
+            sql = f"SELECT PRODUKT_SKU, MATCH FROM EMPF_PERSONENBEZOGEN WHERE KUNDE_ID = {customer_id} ORDER BY MATCH DESC"
+            c.execute(sql)
+            for row in c:
+                product_skus.append(row[0])
+
+        products = get_products_by_skus(product_skus)
+        if len(products) < 20:
+            products = add_discounts(products)
+
+        serializer = ProductSerializer(products, many=True)
+        print(serializer.data)
+
+        return Response(serializer.data)
+
+
 class OneProduct(APIView):
     def get(self, request, format=None):
         product = Product.objects.first()
