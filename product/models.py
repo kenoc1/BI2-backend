@@ -1,7 +1,3 @@
-from PIL import Image
-import requests
-from io import BytesIO
-from django.core.files import File
 from django.db import models
 
 
@@ -75,24 +71,6 @@ class ProductSubcategory(models.Model):
         return f'/{self.slug}/'
 
 
-#class ProductAssosiation(models.Model):
-    #product_envent=
-    #product_assoziate=
-    #confident=
-
-#    class Meta:
-        #db_table = 'produkt_assosiation'
-
-#    def get_assoziation_for_id(self, product_id):
-        product_assosiations = []
-
- #       for assosiation in ProductAssosiation:
- #           if product_id==assosiation.product_envent:
- #               product_assosiations.append(assosiation)
- #
- #       return product_assosiations
-
-
 class Product(models.Model):
     product_id = models.FloatField(primary_key=True, db_column="produkt_id", default=1)
     subcategory = models.ForeignKey(ProductSubcategory, related_name='products', on_delete=models.CASCADE,
@@ -129,26 +107,3 @@ class Product(models.Model):
 
     def get_price(self):
         return round(self.price, 2)
-
-        # if self.thumbnail:
-        #     return 'http://127.0.0.1:8000' + self.thumbnail.url
-        # else:
-        #     if self.image:
-        #         self.thumbnail = self.make_thumbnail(self.image)
-        #         self.save()
-        #
-        #         return 'http://127.0.0.1:8000' + self.thumbnail.url
-        #     else:
-        #         return ''
-    #
-    # def make_thumbnail(self, image, size=(300, 200)):
-    #     img = Image.open(image)
-    #     img.convert('RGB')
-    #     img.thumbnail(size)
-    #
-    #     thumb_io = BytesIO()
-    #     img.save(thumb_io, 'JPEG', quality=85)
-    #
-    #     thumbnail = File(thumb_io, name=image.name)
-    #
-    #     return thumbnail
