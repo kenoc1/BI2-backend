@@ -1,13 +1,13 @@
 -- Kundenranking (Umsatz)
 
 
--- Käufe auf Zeit
+-- Käufe auf Zeit - Chart
 select TRUNC(RECHNUNGSDATUM), count(RECHNUNG_ID) as ANZAHL_KAEUFE
 from RECHNUNG
 where RECHNUNGSDATUM between sysdate - 100 AND sysdate
 group by TRUNC(RECHNUNGSDATUM);
 
--- Umsatz auf Zeit
+-- Umsatz auf Zeit - Chart
 select TRUNC(RECHNUNGSDATUM), sum( SUMME_BRUTTO) as GESAMT_UMSATZ_BRUTTO
 from RECHNUNG
 where RECHNUNGSDATUM between sysdate - 100 AND sysdate
@@ -23,6 +23,9 @@ FROM BESTELLPOSITION,
      BESTELLUNG
 WHERE BESTELLPOSITION.BESTELLUNG_ID = BESTELLUNG.BESTELLUNG_ID
 group by BESTELLPOSITION.PRODUKT_ID;
+
+-- Umsatz - täglich/monatlich/gesamt
+
 
 -- Anzahl an Bestellungen - täglich/monatlich/gesamt
 SELECT COUNT(Distinct BESTELLUNG_ID)
