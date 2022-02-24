@@ -63,7 +63,6 @@ CRONJOBS = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
-    "http://192.168.178.45:8080",
     "https://orange-bay-0ff795603.1.azurestaticapps.net",
     "https://delightful-grass-007c8dd03.1.azurestaticapps.net"
 ]
