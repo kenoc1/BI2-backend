@@ -12,4 +12,8 @@ urlpatterns = [
     url(r'^products/(?P<family_slug>[a-z0-9-+()]+)/(?P<division_slug>[a-z0-9-+()]+)/(?P<category_slug>[a-z0-9-+()]+)/(?P<subcategory_slug>[a-z0-9-+()]+)/$', views.SubcategoryDetail.as_view()),
     path('categories/', views.Categories.as_view()),
     path('favoritProduct/', views.favoritProduct.as_view()),
+    url(r'^products/(?P<family_slug>[a-z0-9-+()]+)/$', views.FamilyDetail.as_view()),
+    path('one/', views.OneProduct.as_view()),
+    path('personal-recommendations/', views.PersonalRecommendationsList.as_view()),
+    path('cart-recommendations/', views.CartRecommendationsList.as_view()),
 ]

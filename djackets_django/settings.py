@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'django_crontab',
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
@@ -57,9 +58,15 @@ INSTALLED_APPS = [
     'customer'
 ]
 
+#“At 00:00 on Sunday every week.”
+#“At 00:00 on Monday every week.”
+CRONJOBS = [
+    ('0 0 * * 0', 'BI2-backend.personal_recommendations_generator.save_associations_for_all_customers'),
+    ('0 0 * * 1', 'BI2-backend.generate_offers.start'),
+]
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
-    "http://192.168.178.45:8080",
     "https://orange-bay-0ff795603.1.azurestaticapps.net",
     "https://delightful-grass-007c8dd03.1.azurestaticapps.net"
 ]
