@@ -1,4 +1,6 @@
 import json
+
+import cx_Oracle
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import Http404
@@ -10,6 +12,9 @@ from rest_framework.decorators import api_view
 from util.page_object import Page_object
 from .models import Product, ProductSubcategory, ProductFamily, ProductDivision, ProductCategory
 from .serializers import ProductSerializer, ProductSubcategorySerializer, ProductFamilySerializer, ProductCategorySerializer, ProductDivisionSerializer
+from django.db import connections
+
+import getFavoriteProduct
 
 
 class LatestProductsList(APIView):
@@ -133,6 +138,47 @@ class SubcategoryDetail(APIView):
         page_object = Page_object(current_page, p.num_pages)
         return Response({'page': json.dumps(page_object.__dict__), 'family_data': serializer_family.data})
 
+class favoritProduct(APIView):
+
+    def get_product_SKU(self):
+        try:
+            productSKU = []
+            with connections['default'].cursor() as cursor:
+                cursor.execute("""select distinct P.SKU, count(P.SKU) as anzahl
+                                    from BESTELLUNG
+                                             join BESTELLPOSITION B on BESTELLUNG.BESTELLUNG_ID = B.BESTELLUNG_ID
+                                             join PRODUKT P on P.PRODUKT_ID = B.PRODUKT_ID
+                                             join PRODUKT_SUBKATEGORIE PS on P.PRODUKTKLASSE_ID = PS.PRODUKT_SUBKATEGORIE_ID
+                                             join PRODUKT_KATEGORIE PK on PS.PRODUKT_KATEGORIE_ID = PK.PRODUKT_KATEGORIE_ID
+                                             join PRODUKT_SPARTE S on PK.PRODUKT_SPARTE_ID = S.PRODUKT_SPARTE_ID
+                                             join PRODUKT_FAMILIE PF on S.PRODUKT_FAMILIE_ID = PF.PRODUKT_FAMILIE_ID
+                                    where PF.PRODUKT_FAMILIE_ID = 6
+                                    group by P.SKU
+                                    order by Anzahl desc;""")
+                for row in cursor:
+                    productSKU.append(row[0])
+            return productSKU[:10]
+        except cx_Oracle.Error as error:
+            print('Error occurred:')
+            print(error)
+
+    def get (self, request):
+        productSKU= self.get_product_SKU()
+        product= get_products_by_skus(productSKU)
+        serializer= ProductSerializer(product, many=True)
+        return Response(serializer.data)
+
+def get_product_by_sku(req_sku):
+    product = Product.objects.filter(Q(sku=req_sku) & Q(origin=1))[:1].get()
+    return product
+
+
+def get_products_by_skus(skus):
+    products = []
+    for sku in skus:
+        products.append(get_product_by_sku(sku))
+
+    return products
 
 @api_view(['POST'])
 def search(request):
