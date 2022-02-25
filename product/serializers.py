@@ -17,7 +17,8 @@ class ProductSerializer(serializers.ModelSerializer):
             "recycle",
             "lowfat",
             "discount",
-            "origin"
+            "origin",
+            "evaluation"
         )
 
 

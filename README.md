@@ -1,5 +1,6 @@
 # djackets_django
 
+##Installation
 Für das Installieren folgende Punkte anwenden:
 
 - python Project Folder Erstellen
@@ -11,3 +12,11 @@ Für das Installieren folgende Punkte anwenden:
 - python manage.py runserver
 
 Bei Fragen kommt gerne auf mich zurück
+
+##Cron Jobs
+```
+python manage.py crontab add
+python manage.py crontab show
+python manage.py crontab remove
+```
+
