@@ -9,4 +9,5 @@ urlpatterns = [
     url(r'^products/(?P<family_slug>[a-z0-9-+()]+)/$', views.FamilyDetail.as_view()),
     path('one/', views.OneProduct.as_view()),
     path('personal-recommendations/', views.PersonalRecommendationsList.as_view()),
+    path('cart-recommendations/', views.CartRecommendationsList.as_view()),
 ]

@@ -5,6 +5,7 @@ from django.db.models import Q
 from django.http import Http404
 
 from django.db import connections
+from itertools import combinations
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -90,6 +91,69 @@ class FamilyDetail(APIView):
         current_page = p.page(page_index)
         page_object = Page_object(current_page, p.num_pages)
         return Response({'page': json.dumps(page_object.__dict__), 'family_data': serializer_family.data})
+
+
+class CartRecommendationsList(APIView):
+    def get(self, request, format=None):
+        # products = request.data.get('products', '')
+        products = [89050326943]
+        # products = [89050326943, 33045791983]
+        # products = [89050326943, 33045791983, 11168633103]
+        # products = [89050326943, 33045791983, 11168633103, 86151577830]
+        products = list(set(products))
+        skus = []
+        if len(products) == 2:
+            skus = get_associations_two_products(products)
+        else:
+            skus = get_associations_more_products(products)
+
+        for sku in products:
+            one_product_associations = get_associations_from_db(sku)
+            for association_sku in one_product_associations:
+                skus.append(association_sku)
+
+        associations = get_products_by_skus(list(set(skus)))
+        serializer = ProductSerializer(associations, many=True)
+        print(serializer.data)
+        return Response(serializer.data)
+
+
+def get_associations_two_products(products):
+    associations_two_products = []
+    with connections['oracle_db'].cursor() as c:
+        sql = f"SELECT ITEMS_ADD FROM ASSOBESTELLUNG WHERE ITEMS_BASE LIKE '%{products[0]}%' AND ITEMS_BASE LIKE '%{products[1]}%' ORDER BY LIFT DESC"
+        c.execute(sql)
+        for row in c:
+            associations_two_products.append(re.search(r'\d+', row[0]).group())
+    return associations_two_products
+
+
+def get_associations_three_products(products):
+    associations_three_products = []
+    with connections['oracle_db'].cursor() as c:
+        sql = f"SELECT ITEMS_ADD FROM ASSOBESTELLUNG WHERE ITEMS_BASE LIKE '%{products[0]}%' AND ITEMS_BASE LIKE '%{products[1]}%' AND ITEMS_BASE LIKE '%{products[2]}%' ORDER BY LIFT DESC"
+        c.execute(sql)
+        for row in c:
+            associations_three_products.append(re.search(r'\d+', row[0]).group())
+    return associations_three_products
+
+
+def get_associations_more_products(products):
+    product_skus_of_associations = []
+    combinations_two_products = [",".join(map(str, comb)) for comb in combinations(products, 2)]
+    for combination in combinations_two_products:
+        two_products = combination.split(",")
+        associations_two_products = get_associations_two_products(two_products)
+        for association in associations_two_products:
+            product_skus_of_associations.append(association)
+    combinations_three_products = [",".join(map(str, comb)) for comb in combinations(products, 3)]
+    for combination in combinations_three_products:
+        three_products = combination.split(",")
+        associations_three_products = get_associations_three_products(three_products)
+        for association in associations_three_products:
+            product_skus_of_associations.append(association)
+    product_skus_of_associations = list(set(product_skus_of_associations))
+    return product_skus_of_associations
 
 
 @api_view(['POST'])
