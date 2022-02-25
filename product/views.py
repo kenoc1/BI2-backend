@@ -59,6 +59,7 @@ class FamilyDetail(APIView):
 
     def get(self, request, family_slug):
         page_index = get_page_index(request)
+        print(page_index)
         family = self.get_object(family_slug)
         divisions = ProductDivision.objects.filter(product_family=family)
         products = Product.objects.filter(subcategory__product_category__product_division__in=divisions).exclude(
@@ -68,7 +69,9 @@ class FamilyDetail(APIView):
         serializer_products = ProductSerializer(products, many=True)
         p = Paginator(serializer_products.data, 20)
         current_page = p.page(page_index)
+        print(current_page)
         page_object = Page_object(current_page, p.num_pages)
+        print(page_object)
         return Response({'page': json.dumps(page_object.__dict__), 'family_data': serializer_family.data})
 
 
@@ -80,12 +83,10 @@ class DivisionDetail(APIView):
             raise Http404
 
     def get(self, request, family_slug, division_slug):
-        print(family_slug)
-        print(division_slug)
         page_index = get_page_index(request)
+        print(page_index)
         division = self.get_object(division_slug)
-        products = Product.objects.filter(subcategory__product_category__product_division__in=division).exclude(
-            image__isnull=True).exclude(image="Kein Bild")
+        products = Product.objects.filter(subcategory__product_category__product_division=division)
         serializer_family = ProductDivisionSerializer(division)
         serializer_products = ProductSerializer(products, many=True)
         p = Paginator(serializer_products.data, 20)

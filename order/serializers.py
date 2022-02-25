@@ -34,6 +34,7 @@ class MyOrderSerializer(serializers.ModelSerializer):
             "paid_amount"
         )
 
+
 class OrderItemSerializer(serializers.ModelSerializer):    
     class Meta:
         model = OrderItem
@@ -42,6 +43,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "product",
             "quantity",
         )
+
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
