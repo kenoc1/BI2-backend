@@ -130,66 +130,68 @@ def get_associations_from_db(sku):
     return associations
 
 
-def get_order_count_day():
-    with connections['oracle_db'].cursor() as c:
-        sql = "SELECT COUNT(Distinct BESTELLUNG_ID) FROM BESTELLUNG Where BESTELLDATUM between sysdate - 1 AND sysdate;"
-        c.execute(sql)
-        if c:
-            return c[0]
-        else:
-            return 0
+class OrderCountDay(APIView):
+    def get(self, request, format=None):
+        with connections['oracle_db'].cursor() as c:
+            sql = "SELECT COUNT(Distinct BESTELLUNG_ID) FROM BESTELLUNG Where BESTELLDATUM between sysdate - 1 AND sysdate;"
+            c.execute(sql)
+            for row in c:
+                return Response({'orders': row[0]})
+            return Response({'orders': 0})
 
 
-def get_order_count_month():
-    with connections['oracle_db'].cursor() as c:
-        sql = "SELECT COUNT(Distinct BESTELLUNG_ID) FROM BESTELLUNG Where BESTELLDATUM between add_months(trunc(sysdate, 'mm'), -1) and last_day(add_months(trunc(sysdate, 'mm'), -1));"
-        c.execute(sql)
-        if c:
-            return c[0]
-        else:
-            return 0
+class OrderCountMonth(APIView):
+    def get(self, request, format=None):
+        with connections['oracle_db'].cursor() as c:
+            sql = "SELECT COUNT(Distinct BESTELLUNG_ID) FROM BESTELLUNG Where BESTELLDATUM between add_months(trunc(sysdate, 'mm'), -1) and last_day(add_months(trunc(sysdate, 'mm'), -1));"
+            c.execute(sql)
+            for row in c:
+                return Response({'orders': row[0]})
+            return Response({'orders': 0})
 
 
-def get_order_count():
-    with connections['oracle_db'].cursor() as c:
-        sql = "select COUNT(BESTELLUNG_ID) FROM BESTELLPOSITION;"
-        c.execute(sql)
-        if c:
-            return c[0]
-        else:
-            return 0
+class OrderCount(APIView):
+    def get(self, request, format=None):
+        with connections['oracle_db'].cursor() as c:
+            sql = "select COUNT(BESTELLUNG_ID) FROM BESTELLPOSITION;"
+            c.execute(sql)
+            for row in c:
+                return Response({'orders': row[0]})
+            return Response({'orders': 0})
 
 
-def get_orders(days):
-    orders = []
-    with connections['oracle_db'].cursor() as c:
-        sql = "select TRUNC(RECHNUNGSDATUM), count(RECHNUNG_ID) as ANZAHL_KAEUFE from RECHNUNG where RECHNUNGSDATUM between sysdate - '{" + str(
-            days) + "}' AND sysdate group by TRUNC(RECHNUNGSDATUM)"
-        c.execute(sql)
-        for row in c:
-            orders.append(row[0])
-            # orders.append(re.search(r'\d+', row[0]).group())
-    return orders
+class Orders(APIView):
+    def get(self, request, format=None):
+        days = 100
+        orders = []
+        with connections['oracle_db'].cursor() as c:
+            sql = "select TRUNC(RECHNUNGSDATUM), count(RECHNUNG_ID) as ANZAHL_KAEUFE from RECHNUNG where RECHNUNGSDATUM between sysdate - " + str(
+                days) + " AND sysdate group by TRUNC(RECHNUNGSDATUM)"
+            c.execute(sql)
+            for row in c:
+                orders.append([row[0], row[1]])
+        return Response({'orders': orders})
 
 
-def get_revenue(days):
-    revenue = []
-    with connections['oracle_db'].cursor() as c:
-        sql = "select TRUNC(RECHNUNGSDATUM), sum(SUMME_BRUTTO) as ANZAHL_KAEUFE from RECHNUNG where RECHNUNGSDATUM between sysdate - '{" + str(
-            days) + "}' AND sysdate group by TRUNC(RECHNUNGSDATUM)"
-        c.execute(sql)
-        for row in c:
-            revenue.append(row[0])
-            # revenue.append(re.search(r'\d+', row[0]).group())
-    return revenue
+class Revenue(APIView):
+    def get(self, request, format=None):
+        days = 100
+        revenue = []
+        with connections['oracle_db'].cursor() as c:
+            sql = "select TRUNC(RECHNUNGSDATUM), sum(SUMME_BRUTTO) as ANZAHL_KAEUFE from RECHNUNG where RECHNUNGSDATUM between sysdate - " + str(
+                days) + " AND sysdate group by TRUNC(RECHNUNGSDATUM)"
+            c.execute(sql)
+            for row in c:
+                revenue.append([row[0], row[1]])
+        return Response({'revenue': revenue})
 
 
-def get_top_seller():
-    products = []
-    with connections['oracle_db'].cursor() as c:
-        sql = "SELECT BESTELLPOSITION.PRODUKT_ID, COUNT(BESTELLPOSITION.PRODUKT_ID) FROM BESTELLPOSITION, BESTELLUNG WHERE BESTELLPOSITION.BESTELLUNG_ID = BESTELLUNG.BESTELLUNG_ID group by BESTELLPOSITION.PRODUKT_ID;"
-        c.execute(sql)
-        for row in c:
-            products.append(row[0])
-            # products.append(re.search(r'\d+', row[0]).group())
-    return products
+class TopSeller(APIView):
+    def get(self, request, format=None):
+        products = []
+        with connections['oracle_db'].cursor() as c:
+            sql = "SELECT BESTELLPOSITION.PRODUKT_ID, COUNT(BESTELLPOSITION.PRODUKT_ID) FROM BESTELLPOSITION, BESTELLUNG WHERE BESTELLPOSITION.BESTELLUNG_ID = BESTELLUNG.BESTELLUNG_ID group by BESTELLPOSITION.PRODUKT_ID;"
+            c.execute(sql)
+            for row in c:
+                products.append([row[0], row[1]])
+        return Response({'top-seller': products})
