@@ -34,6 +34,7 @@ def get_page_index(request):
         return 1
     else:
         return request.GET.get('pg')
+
 class PersonalRecommendationsList(APIView):
     def get(self, request, format=None):
         product_skus = []
@@ -179,13 +180,14 @@ class SubcategoryDetail(APIView):
         page_object = Page_object(current_page, p.num_pages)
         return Response({'page': json.dumps(page_object.__dict__), 'family_data': serializer_family.data})
 
-class favoritProduct(APIView):
+class FavoritProductbyFamily(APIView):
 
-    def get_product_SKU(self):
+    def get_product_SKU(self,family_slug):
         try:
             productSKU = []
+            #print(family_slug)
             with connections['default'].cursor() as cursor:
-                cursor.execute("""select distinct P.SKU, count(P.SKU) as anzahl
+                cursor.execute(f"""select distinct P.SKU, count(P.SKU) as anzahl
                                     from BESTELLUNG
                                              join BESTELLPOSITION B on BESTELLUNG.BESTELLUNG_ID = B.BESTELLUNG_ID
                                              join PRODUKT P on P.PRODUKT_ID = B.PRODUKT_ID
@@ -193,7 +195,46 @@ class favoritProduct(APIView):
                                              join PRODUKT_KATEGORIE PK on PS.PRODUKT_KATEGORIE_ID = PK.PRODUKT_KATEGORIE_ID
                                              join PRODUKT_SPARTE S on PK.PRODUKT_SPARTE_ID = S.PRODUKT_SPARTE_ID
                                              join PRODUKT_FAMILIE PF on S.PRODUKT_FAMILIE_ID = PF.PRODUKT_FAMILIE_ID
-                                    where PF.PRODUKT_FAMILIE_ID = 6
+                                    where PF.SLUG = '{family_slug}'
+                                    group by P.SKU
+                                    order by Anzahl desc;""")
+                for row in cursor:
+                    productSKU.append(row[0])
+            return productSKU[:10]
+        except cx_Oracle.Error as error:
+            print('Error occurred:')
+            print(error)
+
+    def get (self, request,family_slug):
+
+        productSKU= self.get_product_SKU(family_slug)
+        product= get_products_by_skus(productSKU)
+        serializer= ProductSerializer(product, many=True)
+        #print(serializer.data)
+        return Response(serializer.data)
+
+def get_product_by_sku(req_sku):
+    product = Product.objects.filter(Q(sku=req_sku) & Q(origin=1))[:1].get()
+    return product
+
+
+def get_products_by_skus(skus):
+    products = []
+    for sku in skus:
+        products.append(get_product_by_sku(sku))
+
+    return products
+
+class FavoritProduct(APIView):
+
+    def get_product_SKU(self):
+        try:
+            productSKU = []
+            with connections['default'].cursor() as cursor:
+                cursor.execute(f"""select distinct P.SKU, count(P.SKU) as anzahl
+                                    from BESTELLUNG
+                                             join BESTELLPOSITION B on BESTELLUNG.BESTELLUNG_ID = B.BESTELLUNG_ID
+                                             join PRODUKT P on P.PRODUKT_ID = B.PRODUKT_ID
                                     group by P.SKU
                                     order by Anzahl desc;""")
                 for row in cursor:
@@ -207,6 +248,7 @@ class favoritProduct(APIView):
         productSKU= self.get_product_SKU()
         product= get_products_by_skus(productSKU)
         serializer= ProductSerializer(product, many=True)
+
         return Response(serializer.data)
 
 def get_product_by_sku(req_sku):
@@ -249,7 +291,7 @@ class CartRecommendationsList(APIView):
 
 def get_associations_two_products(products):
     associations_two_products = []
-    with connections['oracle_db'].cursor() as c:
+    with connections['default'].cursor() as c:
         sql = f"SELECT ITEMS_ADD FROM ASSOBESTELLUNG WHERE ITEMS_BASE LIKE '%{products[0]}%' AND ITEMS_BASE LIKE '%{products[1]}%' ORDER BY LIFT DESC"
         c.execute(sql)
         for row in c:
@@ -259,7 +301,7 @@ def get_associations_two_products(products):
 
 def get_associations_three_products(products):
     associations_three_products = []
-    with connections['oracle_db'].cursor() as c:
+    with connections['default'].cursor() as c:
         sql = f"SELECT ITEMS_ADD FROM ASSOBESTELLUNG WHERE ITEMS_BASE LIKE '%{products[0]}%' AND ITEMS_BASE LIKE '%{products[1]}%' AND ITEMS_BASE LIKE '%{products[2]}%' ORDER BY LIFT DESC"
         c.execute(sql)
         for row in c:
@@ -335,7 +377,7 @@ def add_discounts(associations):
 
 def get_associations_from_db(sku):
     associations = []
-    with connections['oracle_db'].cursor() as c:
+    with connections['default'].cursor() as c:
         sql = "SELECT ITEMS_ADD FROM ASSOBESTELLUNG WHERE ITEMS_BASE = '{" + str(
             sku) + "}' ORDER BY CONFIDENCE DESC FETCH FIRST 10 ROWS ONLY"
         c.execute(sql)
