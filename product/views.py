@@ -128,3 +128,68 @@ def get_associations_from_db(sku):
             associations.append(re.search(r'\d+', row[0]).group())
 
     return associations
+
+
+def get_order_count_day():
+    with connections['oracle_db'].cursor() as c:
+        sql = "SELECT COUNT(Distinct BESTELLUNG_ID) FROM BESTELLUNG Where BESTELLDATUM between sysdate - 1 AND sysdate;"
+        c.execute(sql)
+        if c:
+            return c[0]
+        else:
+            return 0
+
+
+def get_order_count_month():
+    with connections['oracle_db'].cursor() as c:
+        sql = "SELECT COUNT(Distinct BESTELLUNG_ID) FROM BESTELLUNG Where BESTELLDATUM between add_months(trunc(sysdate, 'mm'), -1) and last_day(add_months(trunc(sysdate, 'mm'), -1));"
+        c.execute(sql)
+        if c:
+            return c[0]
+        else:
+            return 0
+
+
+def get_order_count():
+    with connections['oracle_db'].cursor() as c:
+        sql = "select COUNT(BESTELLUNG_ID) FROM BESTELLPOSITION;"
+        c.execute(sql)
+        if c:
+            return c[0]
+        else:
+            return 0
+
+
+def get_orders(days):
+    orders = []
+    with connections['oracle_db'].cursor() as c:
+        sql = "select TRUNC(RECHNUNGSDATUM), count(RECHNUNG_ID) as ANZAHL_KAEUFE from RECHNUNG where RECHNUNGSDATUM between sysdate - '{" + str(
+            days) + "}' AND sysdate group by TRUNC(RECHNUNGSDATUM)"
+        c.execute(sql)
+        for row in c:
+            orders.append(row[0])
+            # orders.append(re.search(r'\d+', row[0]).group())
+    return orders
+
+
+def get_revenue(days):
+    revenue = []
+    with connections['oracle_db'].cursor() as c:
+        sql = "select TRUNC(RECHNUNGSDATUM), sum(SUMME_BRUTTO) as ANZAHL_KAEUFE from RECHNUNG where RECHNUNGSDATUM between sysdate - '{" + str(
+            days) + "}' AND sysdate group by TRUNC(RECHNUNGSDATUM)"
+        c.execute(sql)
+        for row in c:
+            revenue.append(row[0])
+            # revenue.append(re.search(r'\d+', row[0]).group())
+    return revenue
+
+
+def get_top_seller():
+    products = []
+    with connections['oracle_db'].cursor() as c:
+        sql = "SELECT BESTELLPOSITION.PRODUKT_ID, COUNT(BESTELLPOSITION.PRODUKT_ID) FROM BESTELLPOSITION, BESTELLUNG WHERE BESTELLPOSITION.BESTELLUNG_ID = BESTELLUNG.BESTELLUNG_ID group by BESTELLPOSITION.PRODUKT_ID;"
+        c.execute(sql)
+        for row in c:
+            products.append(row[0])
+            # products.append(re.search(r'\d+', row[0]).group())
+    return products
