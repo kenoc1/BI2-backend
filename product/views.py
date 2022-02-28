@@ -94,12 +94,8 @@ class FamilyDetail(APIView):
 
 
 class CartRecommendationsList(APIView):
-    def get(self, request, format=None):
-        # products = request.data.get('products', '')
-        products = [89050326943]
-        # products = [89050326943, 33045791983]
-        # products = [89050326943, 33045791983, 11168633103]
-        # products = [89050326943, 33045791983, 11168633103, 86151577830]
+    def post(self, request):
+        products = request.data.get('items')
         products = list(set(products))
         skus = []
         if len(products) == 2:
