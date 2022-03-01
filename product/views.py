@@ -80,6 +80,31 @@ class FavoriteProductByFamilySlug(APIView):
         return Response(serializer.data)
 
 
+class FavoriteProduct(APIView):
+    def get_product_skus(self):
+        try:
+            product_skus = []
+            with connections['oracle_db'].cursor() as cursor:
+                cursor.execute(f"""select distinct P.SKU, count(P.SKU) as anzahl
+                                    from BESTELLUNG
+                                        join BESTELLPOSITION B on BESTELLUNG.BESTELLUNG_ID = B.BESTELLUNG_ID
+                                        join PRODUKT P on P.PRODUKT_ID = B.PRODUKT_ID
+                                    group by P.SKU
+                                    order by Anzahl desc;""")
+                for row in cursor:
+                    product_skus.append(row[0])
+            return product_skus[:10]
+        except cx_Oracle.Error as error:
+            print('Error occurred:')
+            print(error)
+
+    def get(self, request):
+        product_skus = self.get_product_skus()
+        products = get_products_by_skus(product_skus)
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data)
+
+
 class OneProduct(APIView):
     def get(self, request, format=None):
         product = Product.objects.first()
