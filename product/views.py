@@ -19,7 +19,6 @@ from .serializers import ProductSerializer, ProductSubcategorySerializer, Produc
 class LatestProductsList(APIView):
     def get(self, request, format=None):
         products = Product.objects.exclude(image__isnull=True).order_by('-discount')[:56]
-        # products = Product.objects.exclude(image__isnull=True)[0:4]
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
 
@@ -28,20 +27,16 @@ class PersonalRecommendationsList(APIView):
     def get(self, request, format=None):
         product_skus = []
         customer_id = 5769  # TODO: get id from logged user
-
         with connections['oracle_db'].cursor() as c:
-            sql = f"SELECT PRODUKT_SKU, MATCH FROM EMPF_PERSONENBEZOGEN WHERE KUNDE_ID = {customer_id} ORDER BY MATCH DESC"
+            sql = f"SELECT PRODUKT_SKU, MATCH FROM EMPF_PERSONENBEZOGEN " \
+                  f"WHERE KUNDE_ID = {customer_id} ORDER BY MATCH DESC"
             c.execute(sql)
             for row in c:
                 product_skus.append(row[0])
-
         products = get_products_by_skus(product_skus)
         if len(products) < 20:
             products = add_discounts(products)
-
         serializer = ProductSerializer(products, many=True)
-        print(serializer.data)
-
         return Response(serializer.data)
 
 
@@ -60,10 +55,7 @@ class ProductDetail(APIView):
             associations = add_discounts(associations)
 
         serializer_product = ProductSerializer(product)
-        print(serializer_product.data)
-
         serializer_associations = ProductSerializer(associations, many=True)
-        print(serializer_associations.data)
 
         return Response({'product': serializer_product.data, 'associations': serializer_associations.data})
 
@@ -102,22 +94,23 @@ class CartRecommendationsList(APIView):
             skus = get_associations_two_products(products)
         else:
             skus = get_associations_more_products(products)
-
         for sku in products:
             one_product_associations = get_associations_from_db(sku)
             for association_sku in one_product_associations:
                 skus.append(association_sku)
-
         associations = get_products_by_skus(list(set(skus)))
+        associations = add_discounts(associations)
         serializer = ProductSerializer(associations, many=True)
-        print(serializer.data)
         return Response(serializer.data)
 
 
 def get_associations_two_products(products):
     associations_two_products = []
     with connections['oracle_db'].cursor() as c:
-        sql = f"SELECT ITEMS_ADD FROM ASSOBESTELLUNG WHERE ITEMS_BASE LIKE '%{products[0]}%' AND ITEMS_BASE LIKE '%{products[1]}%' ORDER BY LIFT DESC"
+        sql = f"SELECT ITEMS_ADD FROM ASSOBESTELLUNG " \
+              f"WHERE ITEMS_BASE LIKE '%{products[0]}%' " \
+              f"AND ITEMS_BASE LIKE '%{products[1]}%' " \
+              f"ORDER BY LIFT DESC"
         c.execute(sql)
         for row in c:
             associations_two_products.append(re.search(r'\d+', row[0]).group())
@@ -127,7 +120,11 @@ def get_associations_two_products(products):
 def get_associations_three_products(products):
     associations_three_products = []
     with connections['oracle_db'].cursor() as c:
-        sql = f"SELECT ITEMS_ADD FROM ASSOBESTELLUNG WHERE ITEMS_BASE LIKE '%{products[0]}%' AND ITEMS_BASE LIKE '%{products[1]}%' AND ITEMS_BASE LIKE '%{products[2]}%' ORDER BY LIFT DESC"
+        sql = f"SELECT ITEMS_ADD FROM ASSOBESTELLUNG " \
+              f"WHERE ITEMS_BASE LIKE '%{products[0]}%' " \
+              f"AND ITEMS_BASE LIKE '%{products[1]}%' " \
+              f"AND ITEMS_BASE LIKE '%{products[2]}%' " \
+              f"ORDER BY LIFT DESC"
         c.execute(sql)
         for row in c:
             associations_three_products.append(re.search(r'\d+', row[0]).group())
@@ -179,13 +176,11 @@ def get_products_by_skus(skus):
     products = []
     for sku in skus:
         products.append(get_product_by_sku(sku))
-
     return products
 
 
 def get_association(sku):
     products = []
-
     if sku:
         products = get_products_by_skus(get_associations_from_db(sku))
     return products
@@ -195,7 +190,6 @@ def add_discounts(associations):
     products = Product.objects.exclude(image__isnull=True).order_by('-discount')[:10]
     for product in products:
         associations.append(product)
-
     return associations[:10]
 
 
@@ -207,5 +201,4 @@ def get_associations_from_db(sku):
         c.execute(sql)
         for row in c:
             associations.append(re.search(r'\d+', row[0]).group())
-
     return associations
