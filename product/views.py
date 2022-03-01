@@ -37,7 +37,7 @@ class PersonalRecommendationsList(APIView):
     def get(self, request, format=None):
         product_skus = []
         customer_id = 5769  # TODO: get id from logged user
-        with connections['oracle_db'].cursor() as c:
+        with connections['default'].cursor() as c:
             sql = f"SELECT PRODUKT_SKU, MATCH FROM EMPF_PERSONENBEZOGEN " \
                   f"WHERE KUNDE_ID = {customer_id} ORDER BY MATCH DESC"
             c.execute(sql)
@@ -54,7 +54,7 @@ class FavoriteProductByFamilySlug(APIView):
     def get_product_by_slug(self, family_slug):
         try:
             product_skus = []
-            with connections['oracle_db'].cursor() as cursor:
+            with connections['default'].cursor() as cursor:
                 cursor.execute(f"""select distinct P.SKU, count(P.SKU) as anzahl
                                     from BESTELLUNG
                                         join BESTELLPOSITION B on BESTELLUNG.BESTELLUNG_ID = B.BESTELLUNG_ID
@@ -84,7 +84,7 @@ class FavoriteProduct(APIView):
     def get_product_skus(self):
         try:
             product_skus = []
-            with connections['oracle_db'].cursor() as cursor:
+            with connections['default'].cursor() as cursor:
                 cursor.execute(f"""select distinct P.SKU, count(P.SKU) as anzahl
                                     from BESTELLUNG
                                         join BESTELLPOSITION B on BESTELLUNG.BESTELLUNG_ID = B.BESTELLUNG_ID
@@ -248,7 +248,7 @@ class CartRecommendationsList(APIView):
 
 def get_associations_two_products(products):
     associations_two_products = []
-    with connections['oracle_db'].cursor() as c:
+    with connections['default'].cursor() as c:
         sql = f"SELECT ITEMS_ADD FROM ASSOBESTELLUNG " \
               f"WHERE ITEMS_BASE LIKE '%{products[0]}%' " \
               f"AND ITEMS_BASE LIKE '%{products[1]}%' " \
@@ -261,7 +261,7 @@ def get_associations_two_products(products):
 
 def get_associations_three_products(products):
     associations_three_products = []
-    with connections['oracle_db'].cursor() as c:
+    with connections['default'].cursor() as c:
         sql = f"SELECT ITEMS_ADD FROM ASSOBESTELLUNG " \
               f"WHERE ITEMS_BASE LIKE '%{products[0]}%' " \
               f"AND ITEMS_BASE LIKE '%{products[1]}%' " \
@@ -337,7 +337,7 @@ def add_discounts(associations):
 
 def get_associations_from_db(sku):
     associations = []
-    with connections['oracle_db'].cursor() as c:
+    with connections['default'].cursor() as c:
         sql = "SELECT ITEMS_ADD FROM ASSOBESTELLUNG WHERE ITEMS_BASE = '{" + str(
             sku) + "}' ORDER BY CONFIDENCE DESC FETCH FIRST 10 ROWS ONLY"
         c.execute(sql)
