@@ -15,7 +15,8 @@ from rest_framework.decorators import api_view
 
 from util.page_object import Page_object
 from .models import Product, ProductSubcategory, ProductFamily, ProductDivision, ProductCategory
-from .serializers import ProductSerializer, ProductSubcategorySerializer, ProductFamilySerializer
+from .serializers import ProductSerializer, ProductSubcategorySerializer, ProductFamilySerializer, \
+    ProductDivisionSerializer, ProductCategorySerializer
 
 
 class LatestProductsList(APIView):
@@ -31,6 +32,7 @@ def get_page_index(request):
     else:
         return request.GET.get('pg')
 
+
 class PersonalRecommendationsList(APIView):
     def get(self, request, format=None):
         product_skus = []
@@ -44,6 +46,36 @@ class PersonalRecommendationsList(APIView):
         products = get_products_by_skus(product_skus)
         if len(products) < 20:
             products = add_discounts(products)
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data)
+
+
+class FavoriteProductByFamilySlug(APIView):
+    def get_product_by_slug(self, family_slug):
+        try:
+            product_skus = []
+            with connections['oracle_db'].cursor() as cursor:
+                cursor.execute(f"""select distinct P.SKU, count(P.SKU) as anzahl
+                                    from BESTELLUNG
+                                        join BESTELLPOSITION B on BESTELLUNG.BESTELLUNG_ID = B.BESTELLUNG_ID
+                                        join PRODUKT P on P.PRODUKT_ID = B.PRODUKT_ID
+                                        join PRODUKT_SUBKATEGORIE PS on P.PRODUKTKLASSE_ID = PS.PRODUKT_SUBKATEGORIE_ID
+                                        join PRODUKT_KATEGORIE PK on PS.PRODUKT_KATEGORIE_ID = PK.PRODUKT_KATEGORIE_ID
+                                        join PRODUKT_SPARTE S on PK.PRODUKT_SPARTE_ID = S.PRODUKT_SPARTE_ID
+                                        join PRODUKT_FAMILIE PF on S.PRODUKT_FAMILIE_ID = PF.PRODUKT_FAMILIE_ID
+                                    where PF.SLUG = '{family_slug}'
+                                    group by P.SKU
+                                    order by Anzahl desc;""")
+                for row in cursor:
+                    product_skus.append(row[0])
+            return product_skus[:10]
+        except cx_Oracle.Error as error:
+            print('Error occurred:')
+            print(error)
+
+    def get(self, request, family_slug):
+        product_skus = self.get_product_by_slug(family_slug)
+        products = get_products_by_skus(product_skus)
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
 
