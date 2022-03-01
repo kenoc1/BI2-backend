@@ -60,10 +60,28 @@ class FamilyDetail(APIView):
             page_index = request.GET.get('pg')
         family = self.get_object(family_slug)
         divisions = ProductDivision.objects.filter(product_family=family)
-        products = Product.objects.filter(subcategory__product_category__product_division__in=divisions).exclude(
-            image__isnull=True).exclude(image="Kein Bild")
-        serializer_family = ProductFamilySerializer(family)
 
+        if not request.GET.get('ftr') is None:
+            filter = request.GET.get('ftr')
+            products = Product.objects.filter(subcategory__product_category__product_division__in=divisions).filter(evaluation__in=filter).exclude(
+            image__isnull=True).exclude(image="Kein Bild")
+        else:
+            products = Product.objects.filter(subcategory__product_category__product_division__in=divisions).exclude(
+            image__isnull=True).exclude(image="Kein Bild")
+
+        #check order params
+        if not request.GET.get('psrt') is None:
+            if request.GET.get('psrt') == 'HighToLow':
+                products = products.order_by('-price')
+            else:
+                products = products.order_by('price')
+        elif not request.GET.get('rsrt') is None:
+            if request.GET.get('rsrt') == 'HighToLow':
+                products = products.order_by('-evaluation')
+            else:
+                products = products.order_by('evaluation')
+
+        serializer_family = ProductFamilySerializer(family)
         serializer_products = ProductSerializer(products, many=True)
         p = Paginator(serializer_products.data, 20)
         current_page = p.page(page_index)
