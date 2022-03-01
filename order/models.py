@@ -2,31 +2,59 @@ from django.contrib.auth.models import User
 from django.db import models
 
 from product.models import Product
+from customer.models import Customer
 
-class Order(models.Model):
-    user = models.ForeignKey(User, related_name='orders', on_delete=models.CASCADE)
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
-    email = models.CharField(max_length=100)
-    address = models.CharField(max_length=100)
-    zipcode = models.CharField(max_length=100)
-    place = models.CharField(max_length=100)
-    phone = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
-    paid_amount = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
-    stripe_token = models.CharField(max_length=100)
+
+class Cart(models.Model):
+    cart_id = models.FloatField(primary_key=True, db_column='warenkorb_id')
+    customer = models.ForeignKey(Customer, models.DO_NOTHING, blank=True, null=True, db_column='kunde_id')
+    total_price = models.FloatField(db_column='gesamtpreis')
+    total_quantity = models.FloatField(blank=True, null=True, db_column='gesamtmenge')
 
     class Meta:
-        ordering = ['-created_at',]
-    
+        managed = False
+        db_table = 'warenkorb'
+
+
+class CartProduct(models.Model):
+    cart_product_id = models.FloatField(primary_key=True, db_column='warenkorb_produkt_id')
+    cart = models.ForeignKey(Cart, models.DO_NOTHING, db_column='warenkorb_id')
+    product = models.ForeignKey(Product, models.DO_NOTHING, db_column='produkt_id')
+    quantity = models.FloatField(db_column='menge')
+
+    class Meta:
+        managed = False
+        db_table = 'warenkorb_produkt'
+
+
+class Order(models.Model):
+    order_id = models.FloatField(primary_key=True, db_column='bestellung_id')
+    # warenkorb = models.ForeignKey('Warenkorb', models.DO_NOTHING, blank=True, null=True, db_column='')
+    # rabattcode = models.ForeignKey('Rabattcode', models.DO_NOTHING, blank=True, null=True, db_column='')
+    # status = models.CharField(max_length=30, db_column='')
+    order_date = models.DateField(db_column='bestelldatum')
+    total_quantity = models.FloatField(db_column='gesamtmenge')
+    origin = models.FloatField(db_column="datenherkunft_id", blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'bestellung'
+
     def __str__(self):
-        return self.first_name
+        return self.order_id
+
 
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, related_name='items', on_delete=models.CASCADE)
-    price = models.DecimalField(max_digits=8, decimal_places=2)
-    quantity = models.IntegerField(default=1)
+    order_item_id = models.FloatField(primary_key=True, db_column='bestellposition_id')
+    product = models.ForeignKey(Product, models.DO_NOTHING, blank=True, null=True, db_column='produkt')
+    order = models.ForeignKey(Order, models.DO_NOTHING, blank=True, null=True, db_column='bestellung')
+    quantity = models.FloatField(db_column='menge')
+
+    class Meta:
+        managed = False
+        db_table = 'bestellposition'
 
     def __str__(self):
-        return '%s' % self.id
+        return '%s' % self.order_item_id
+
+

@@ -30,7 +30,10 @@ SECRET_KEY = 'f_)*$6xz#a7k(6ir&u@+tq8h@_t_9%3nr%9g5z4vdp#*a4)a*o'
 DEBUG = True
 
 ALLOWED_HOSTS = ['bi-backend.azurewebsites.net',
-                 'dev-bi-backend.azurewebsites.net', 'localhost', '127.0.0.1']
+                 'dev-bi-backend.azurewebsites.net',
+                 '134.106.56.44',
+                 'localhost',
+                 '127.0.0.1']
 
 STRIPE_SECRET_KEY = 'sk_test_51HIHiuKBJV2qeWbD4IBpAODack7r7r9LJ0Y65zSFx7jUUwgy2nfKEgQGvorv1p2xp7tgMsJ5N9EW7K1lBdPnFnyK00kdrS27cj'
 
@@ -51,7 +54,8 @@ INSTALLED_APPS = [
     'djoser',
 
     'product',
-    'order'
+    'order',
+    'customer'
 ]
 
 #“At 00:00 on Sunday every week.”
@@ -105,20 +109,14 @@ WSGI_APPLICATION = 'djackets_django.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    },
-    'oracle_db': {
         'ENGINE': 'django.db.backends.oracle',
         'NAME': 'dbprak2',
-        'USER': '"BI21"',
+        'USER': 'BI21',
         'PASSWORD': os.getenv('ORACLE_PASSWORD_DB'),
         'HOST': '134.106.56.44',
         'PORT': '1521',
     }
 }
-
-DATABASE_ROUTERS = ['routers.db_routers.ProductRouter']
 
 
 # Password validation

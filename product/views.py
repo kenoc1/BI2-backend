@@ -1,4 +1,6 @@
 import json
+
+import cx_Oracle
 import re
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -22,6 +24,12 @@ class LatestProductsList(APIView):
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
 
+
+def get_page_index(request):
+    if request.GET.get('pg') is None:
+        return 1
+    else:
+        return request.GET.get('pg')
 
 class PersonalRecommendationsList(APIView):
     def get(self, request, format=None):
@@ -60,6 +68,23 @@ class ProductDetail(APIView):
         return Response({'product': serializer_product.data, 'associations': serializer_associations.data})
 
 
+class Categories(APIView):
+    def get(self, request, format=None):
+        families = []
+        for family in ProductFamily.objects.all():
+            divisions = []
+            for division in ProductDivision.objects.filter(product_family=family):
+                categories = []
+                for category in ProductCategory.objects.filter(product_division=division):
+                    subcategories = []
+                    for subcategory in ProductSubcategory.objects.filter(product_category=category):
+                        subcategories.append({'description': subcategory.description, 'slug': subcategory.get_absolute_url()})
+                    categories.append({'description': category.description, 'slug': category.get_absolute_url(), 'subcategories': subcategories})
+                divisions.append({'description': division.description, 'slug': division.get_absolute_url(), 'categories': categories})
+            families.append({'description': family.description, 'slug': family.get_absolute_url(), 'divisions': divisions})
+        return Response(families)
+
+
 class FamilyDetail(APIView):
     def get_object(self, family_slug):
         try:
@@ -68,16 +93,76 @@ class FamilyDetail(APIView):
             raise Http404
 
     def get(self, request, family_slug):
-        if request.GET.get('pg') is None:
-            page_index = 1
-        else:
-            page_index = request.GET.get('pg')
+        page_index = get_page_index(request)
+        print(page_index)
         family = self.get_object(family_slug)
         divisions = ProductDivision.objects.filter(product_family=family)
         products = Product.objects.filter(subcategory__product_category__product_division__in=divisions).exclude(
             image__isnull=True).exclude(image="Kein Bild")
         serializer_family = ProductFamilySerializer(family)
 
+        serializer_products = ProductSerializer(products, many=True)
+        p = Paginator(serializer_products.data, 20)
+        current_page = p.page(page_index)
+        print(current_page)
+        page_object = Page_object(current_page, p.num_pages)
+        print(page_object)
+        return Response({'page': json.dumps(page_object.__dict__), 'family_data': serializer_family.data})
+
+
+class DivisionDetail(APIView):
+    def get_object(self, division_slug):
+        try:
+            return ProductDivision.objects.get(slug=division_slug)
+        except ProductDivision.DoesNotExist:
+            raise Http404
+
+    def get(self, request, family_slug, division_slug):
+        page_index = get_page_index(request)
+        print(page_index)
+        division = self.get_object(division_slug)
+        products = Product.objects.filter(subcategory__product_category__product_division=division)
+        serializer_family = ProductDivisionSerializer(division)
+        serializer_products = ProductSerializer(products, many=True)
+        p = Paginator(serializer_products.data, 20)
+        current_page = p.page(page_index)
+        page_object = Page_object(current_page, p.num_pages)
+        return Response({'page': json.dumps(page_object.__dict__), 'family_data': serializer_family.data})
+
+
+class CategoryDetail(APIView):
+    def get_object(self, category_slug):
+        try:
+            return ProductCategory.objects.get(slug=category_slug)
+        except ProductCategory.DoesNotExist:
+            raise Http404
+
+    def get(self, request, category_slug):
+        page_index = get_page_index(request)
+        category = self.get_object(category_slug)
+        products = Product.objects.filter(subcategory__product_category__in=category).exclude(
+            image__isnull=True).exclude(image="Kein Bild")
+        serializer_family = ProductCategorySerializer(category)
+        serializer_products = ProductSerializer(products, many=True)
+        p = Paginator(serializer_products.data, 20)
+        current_page = p.page(page_index)
+        page_object = Page_object(current_page, p.num_pages)
+        return Response({'page': json.dumps(page_object.__dict__), 'family_data': serializer_family.data})
+
+
+class SubcategoryDetail(APIView):
+    def get_object(self, subcategory_slug):
+        try:
+            return ProductSubcategory.objects.get(slug=subcategory_slug)
+        except ProductSubcategory.DoesNotExist:
+            raise Http404
+
+    def get(self, request, subcategory_slug):
+        page_index = get_page_index(request)
+        subcategory = self.get_object(subcategory_slug)
+        products = Product.objects.filter(subcategory__in=subcategory).exclude(
+            image__isnull=True).exclude(image="Kein Bild")
+        serializer_family = ProductSubcategorySerializer(subcategory)
         serializer_products = ProductSerializer(products, many=True)
         p = Paginator(serializer_products.data, 20)
         current_page = p.page(page_index)
