@@ -103,7 +103,7 @@ DATABASES = {
     'oracle_db': {
         'ENGINE': 'django.db.backends.oracle',
         'NAME': 'dbprak2',
-        'USER': '"BI21"',
+        'USER': 'BI21',
         'PASSWORD': os.getenv('ORACLE_PASSWORD_DB'),
         'HOST': '134.106.56.44',
         'PORT': '1521',

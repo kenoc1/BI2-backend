@@ -231,6 +231,16 @@ class OrderCountDay(APIView):
             return Response({'orders': 0})
 
 
+class OrderCountWeek(APIView):
+    def get(self, request, format=None):
+        with connections['oracle_db'].cursor() as c:
+            sql = "SELECT COUNT(Distinct BESTELLUNG_ID) FROM BESTELLUNG Where BESTELLDATUM between sysdate - 7 AND sysdate;"
+            c.execute(sql)
+            for row in c:
+                return Response({'orders': row[0]})
+            return Response({'orders': 0})
+
+
 class OrderCountMonth(APIView):
     def get(self, request, format=None):
         with connections['oracle_db'].cursor() as c:
@@ -254,6 +264,19 @@ class OrderCount(APIView):
 class OrderRevenueDay(APIView):
     def get(self, request, format=None):
         days = 1
+        with connections['oracle_db'].cursor() as c:
+            sql = "select sum(SUMME_BRUTTO) as GESAMT_UMSATZ_BRUTTO from RECHNUNG where RECHNUNGSDATUM between " \
+                  "sysdate - " + str(days) + " AND sysdate"
+            c.execute(sql)
+            for row in c:
+                if row[0] is None:
+                    return Response({'order-revenue': 0})
+                return Response({'order-revenue': row[0]})
+
+
+class OrderRevenueWeek(APIView):
+    def get(self, request, format=None):
+        days = 7
         with connections['oracle_db'].cursor() as c:
             sql = "select sum(SUMME_BRUTTO) as GESAMT_UMSATZ_BRUTTO from RECHNUNG where RECHNUNGSDATUM between " \
                   "sysdate - " + str(days) + " AND sysdate"
@@ -291,13 +314,19 @@ class Orders(APIView):
     def get(self, request, format=None):
         days = 100
         orders = []
+        dates = []
+        values = []
         with connections['oracle_db'].cursor() as c:
             sql = "select TRUNC(RECHNUNGSDATUM), count(RECHNUNG_ID) as ANZAHL_KAEUFE from RECHNUNG where " \
-                  "RECHNUNGSDATUM between sysdate - " + str(days) + " AND sysdate group by TRUNC(RECHNUNGSDATUM)"
+                  "RECHNUNGSDATUM between sysdate - " + str(days) + " AND sysdate group by TRUNC(RECHNUNGSDATUM) order by TRUNC(RECHNUNGSDATUM)"
             c.execute(sql)
             for row in c:
-                orders.append([row[0], row[1]])
+                dates.append(row[0])
+                values.append(row[1])
+                # orders.append([row[0], row[1]])
                 # orders.append({'date': row[0], 'order-count': row[1]})
+        orders.append(dates)
+        orders.append(values)
         return Response({'orders': orders})
 
 
