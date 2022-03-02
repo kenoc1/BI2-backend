@@ -130,42 +130,39 @@ def get_associations_from_db(sku):
     return associations
 
 
-# ToDo: request incorrect (PRODUKT_ID, NAME missing)
 class AssociationsMr(APIView):
     def get(self, request, format=None):
         asso = []
         with connections['oracle_db'].cursor() as c:
-            sql = "SELECT RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEHERR"
+            sql = "SELECT t1.RULE_ID, t1.PRODUKT_ID, t1.SKU, t1.ITEMS_BASE, t2.PRODUKT_ID, t2.SKU, t1.ITEMS_ADD, t1.CONFIDENCE, t1.LIFT, t1.SUPPORT FROM (SELECT PRODUKT_ID, SKU, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEHERR, PRODUKT WHERE REPLACE(REPLACE(ITEMS_BASE, '{', ''), '}', '') = PRODUKT.SKU) t1 LEFT JOIN (SELECT PRODUKT_ID, SKU, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEHERR, PRODUKT WHERE REPLACE(REPLACE(ITEMS_ADD, '{', ''), '}', '') = PRODUKT.SKU) t2 ON (t1.RULE_ID=t2.RULE_ID);"
             c.execute(sql)
             for row in c:
                 # asso.append([row[0], row[1], row[2], row[3], row[4], row[5]])
-                asso.append({'rule-id': row[0], 'item-base': row[1], 'item-add': row[2], 'confidence': row[3], 'lift': row[4], 'support': row[5]})
+                asso.append({'rule-id': row[0], 'item-base-product-id': row[1], 'item-base-product-sku': row[2], 'item-add-product-id': row[4], 'item-add-product-sku': row[5], 'confidence': row[7], 'lift': row[8], 'support': row[9]})
             return Response({'asso-order': asso})
 
 
-# ToDo: request incorrect (PRODUKT_ID, NAME missing)
 class AssociationsMs(APIView):
     def get(self, request, format=None):
         asso = []
         with connections['oracle_db'].cursor() as c:
-            sql = "SELECT RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEFRAU"
+            sql = "SELECT t1.RULE_ID, t1.PRODUKT_ID, t1.SKU, t1.ITEMS_BASE, t2.PRODUKT_ID, t2.SKU, t1.ITEMS_ADD, t1.CONFIDENCE, t1.LIFT, t1.SUPPORT FROM (SELECT PRODUKT_ID, SKU, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEFRAU, PRODUKT WHERE REPLACE(REPLACE(ITEMS_BASE, '{', ''), '}', '') = PRODUKT.SKU) t1 LEFT JOIN (SELECT PRODUKT_ID, SKU, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEFRAU, PRODUKT WHERE REPLACE(REPLACE(ITEMS_ADD, '{', ''), '}', '') = PRODUKT.SKU) t2 ON (t1.RULE_ID=t2.RULE_ID);"
             c.execute(sql)
             for row in c:
                 # asso.append([row[0], row[1], row[2], row[3], row[4], row[5]])
-                asso.append({'rule-id': row[0], 'item-base': row[1], 'item-add': row[2], 'confidence': row[3], 'lift': row[4], 'support': row[5]})
+                asso.append({'rule-id': row[0], 'item-base-product-id': row[1], 'item-base-product-sku': row[2], 'item-add-product-id': row[4], 'item-add-product-sku': row[5], 'confidence': row[7], 'lift': row[8], 'support': row[9]})
             return Response({'asso-order': asso})
 
 
-# ToDo: request incorrect (PRODUKT_ID, NAME missing)
 class AssociationsOrder(APIView):
     def get(self, request, format=None):
         asso = []
         with connections['oracle_db'].cursor() as c:
-            sql = "SELECT RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOBESTELLUNG"
+            sql = "SELECT t1.RULE_ID, t1.PRODUKT_ID, t1.SKU, t1.ITEMS_BASE, t2.PRODUKT_ID, t2.SKU, t1.ITEMS_ADD, t1.CONFIDENCE, t1.LIFT, t1.SUPPORT FROM (SELECT PRODUKT_ID, SKU, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOBESTELLUNG, PRODUKT WHERE REPLACE(REPLACE(ITEMS_BASE, '{', ''), '}', '') = PRODUKT.SKU) t1 LEFT JOIN (SELECT PRODUKT_ID, SKU, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOBESTELLUNG, PRODUKT WHERE REPLACE(REPLACE(ITEMS_ADD, '{', ''), '}', '') = PRODUKT.SKU) t2 ON (t1.RULE_ID=t2.RULE_ID);"
             c.execute(sql)
             for row in c:
                 # asso.append([row[0], row[1], row[2], row[3], row[4], row[5]])
-                asso.append({'rule-id': row[0], 'item-base': row[1], 'item-add': row[2], 'confidence': row[3], 'lift': row[4], 'support': row[5]})
+                asso.append({'rule-id': row[0], 'item-base-product-id': row[1], 'item-base-product-sku': row[2], 'item-add-product-id': row[4], 'item-add-product-sku': row[5], 'confidence': row[7], 'lift': row[8], 'support': row[9]})
             return Response({'asso-order': asso})
 
 
@@ -302,12 +299,11 @@ class Revenue(APIView):
         return Response({'revenue': revenue})
 
 
-# ToDo: request incorrect (BESTELLPOSITION.MENGE not included)
 class TopSellerProducts(APIView):
     def get(self, request, format=None):
         products = []
         with connections['oracle_db'].cursor() as c:
-            sql = "SELECT BESTELLPOSITION.PRODUKT_ID, COUNT(BESTELLPOSITION.PRODUKT_ID) FROM BESTELLPOSITION, BESTELLUNG WHERE BESTELLPOSITION.BESTELLUNG_ID = BESTELLUNG.BESTELLUNG_ID group by BESTELLPOSITION.PRODUKT_ID;"
+            sql = "SELECT BESTELLPOSITION.PRODUKT_ID, COUNT(BESTELLPOSITION.PRODUKT_ID), BESTELLPOSITION.MENGE FROM BESTELLPOSITION, BESTELLUNG WHERE BESTELLPOSITION.BESTELLUNG_ID = BESTELLUNG.BESTELLUNG_ID group by BESTELLPOSITION.PRODUKT_ID, BESTELLPOSITION.MENGE;"
             c.execute(sql)
             for row in c:
                 # products.append([row[0], row[1]])
