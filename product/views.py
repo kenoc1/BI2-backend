@@ -1,5 +1,7 @@
 import json
 import re
+from operator import itemgetter
+
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import Http404
@@ -130,40 +132,57 @@ def get_associations_from_db(sku):
     return associations
 
 
+def delete_duplicates(old_l):
+    seen = set()
+    new_l = []
+    for d in old_l:
+        t = tuple(d.items())
+        if t not in seen:
+            seen.add(t)
+            new_l.append(d)
+    return new_l
+
+
 class AssociationsMr(APIView):
     def get(self, request, format=None):
         asso = []
         with connections['oracle_db'].cursor() as c:
-            sql = "SELECT t1.RULE_ID, t1.PRODUKT_ID, t1.SKU, t1.ITEMS_BASE, t2.PRODUKT_ID, t2.SKU, t1.ITEMS_ADD, t1.CONFIDENCE, t1.LIFT, t1.SUPPORT FROM (SELECT PRODUKT_ID, SKU, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEHERR, PRODUKT WHERE REPLACE(REPLACE(ITEMS_BASE, '{', ''), '}', '') = PRODUKT.SKU) t1 LEFT JOIN (SELECT PRODUKT_ID, SKU, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEHERR, PRODUKT WHERE REPLACE(REPLACE(ITEMS_ADD, '{', ''), '}', '') = PRODUKT.SKU) t2 ON (t1.RULE_ID=t2.RULE_ID);"
+            sql = "SELECT t1.RULE_ID, t1.PRODUKT_ID, t1.SKU, t1.PROUKT_NAME, t2.PRODUKT_ID, t2.SKU, t2.PROUKT_NAME, t1.CONFIDENCE, t1.LIFT, t1.SUPPORT FROM (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEHERR, PRODUKT WHERE REPLACE(REPLACE(ITEMS_BASE, '{', ''), '}', '') = PRODUKT.SKU) t1 LEFT JOIN (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEHERR, PRODUKT WHERE REPLACE(REPLACE(ITEMS_ADD, '{', ''), '}', '') = PRODUKT.SKU) t2 ON (t1.RULE_ID=t2.RULE_ID);"
             c.execute(sql)
             for row in c:
-                # asso.append([row[0], row[1], row[2], row[3], row[4], row[5]])
-                asso.append({'rule-id': row[0], 'item-base-product-id': row[1], 'item-base-product-sku': row[2], 'item-add-product-id': row[4], 'item-add-product-sku': row[5], 'confidence': row[7], 'lift': row[8], 'support': row[9]})
-            return Response({'asso-order': asso})
+                asso.append({'rule-id': row[0], 'item-base-product-sku': row[2],
+                             'item-base-product-name': row[3],
+                             'item-add-product-sku': row[5], 'item-add-product-name': row[6], 'confidence': row[7],
+                             'lift': row[8], 'support': row[9]})
+            return Response({'asso-order': delete_duplicates(asso)})
 
 
 class AssociationsMs(APIView):
     def get(self, request, format=None):
         asso = []
         with connections['oracle_db'].cursor() as c:
-            sql = "SELECT t1.RULE_ID, t1.PRODUKT_ID, t1.SKU, t1.ITEMS_BASE, t2.PRODUKT_ID, t2.SKU, t1.ITEMS_ADD, t1.CONFIDENCE, t1.LIFT, t1.SUPPORT FROM (SELECT PRODUKT_ID, SKU, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEFRAU, PRODUKT WHERE REPLACE(REPLACE(ITEMS_BASE, '{', ''), '}', '') = PRODUKT.SKU) t1 LEFT JOIN (SELECT PRODUKT_ID, SKU, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEFRAU, PRODUKT WHERE REPLACE(REPLACE(ITEMS_ADD, '{', ''), '}', '') = PRODUKT.SKU) t2 ON (t1.RULE_ID=t2.RULE_ID);"
+            sql = "SELECT t1.RULE_ID, t1.PRODUKT_ID, t1.SKU, t1.PROUKT_NAME, t2.PRODUKT_ID, t2.SKU, t2.PROUKT_NAME, t1.CONFIDENCE, t1.LIFT, t1.SUPPORT FROM (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEFRAU, PRODUKT WHERE REPLACE(REPLACE(ITEMS_BASE, '{', ''), '}', '') = PRODUKT.SKU) t1 LEFT JOIN (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEFRAU, PRODUKT WHERE REPLACE(REPLACE(ITEMS_ADD, '{', ''), '}', '') = PRODUKT.SKU) t2 ON (t1.RULE_ID=t2.RULE_ID);"
             c.execute(sql)
             for row in c:
-                # asso.append([row[0], row[1], row[2], row[3], row[4], row[5]])
-                asso.append({'rule-id': row[0], 'item-base-product-id': row[1], 'item-base-product-sku': row[2], 'item-add-product-id': row[4], 'item-add-product-sku': row[5], 'confidence': row[7], 'lift': row[8], 'support': row[9]})
-            return Response({'asso-order': asso})
+                asso.append({'rule-id': row[0], 'item-base-product-sku': row[2],
+                             'item-base-product-name': row[3],
+                             'item-add-product-sku': row[5], 'item-add-product-name': row[6], 'confidence': row[7],
+                             'lift': row[8], 'support': row[9]})
+            return Response({'asso-order': delete_duplicates(asso)})
 
 
 class AssociationsOrder(APIView):
     def get(self, request, format=None):
         asso = []
         with connections['oracle_db'].cursor() as c:
-            sql = "SELECT t1.RULE_ID, t1.PRODUKT_ID, t1.SKU, t1.ITEMS_BASE, t2.PRODUKT_ID, t2.SKU, t1.ITEMS_ADD, t1.CONFIDENCE, t1.LIFT, t1.SUPPORT FROM (SELECT PRODUKT_ID, SKU, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOBESTELLUNG, PRODUKT WHERE REPLACE(REPLACE(ITEMS_BASE, '{', ''), '}', '') = PRODUKT.SKU) t1 LEFT JOIN (SELECT PRODUKT_ID, SKU, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOBESTELLUNG, PRODUKT WHERE REPLACE(REPLACE(ITEMS_ADD, '{', ''), '}', '') = PRODUKT.SKU) t2 ON (t1.RULE_ID=t2.RULE_ID);"
+            sql = "SELECT t1.RULE_ID, t1.PRODUKT_ID, t1.SKU, t1.PROUKT_NAME, t2.PRODUKT_ID, t2.SKU, t2.PROUKT_NAME, t1.CONFIDENCE, t1.LIFT, t1.SUPPORT FROM (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOBESTELLUNG, PRODUKT WHERE REPLACE(REPLACE(ITEMS_BASE, '{', ''), '}', '') = PRODUKT.SKU) t1 LEFT JOIN (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOBESTELLUNG, PRODUKT WHERE REPLACE(REPLACE(ITEMS_ADD, '{', ''), '}', '') = PRODUKT.SKU) t2 ON (t1.RULE_ID=t2.RULE_ID);"
             c.execute(sql)
             for row in c:
-                # asso.append([row[0], row[1], row[2], row[3], row[4], row[5]])
-                asso.append({'rule-id': row[0], 'item-base-product-id': row[1], 'item-base-product-sku': row[2], 'item-add-product-id': row[4], 'item-add-product-sku': row[5], 'confidence': row[7], 'lift': row[8], 'support': row[9]})
-            return Response({'asso-order': asso})
+                asso.append({'rule-id': row[0], 'item-base-product-sku': row[2],
+                             'item-base-product-name': row[3],
+                             'item-add-product-sku': row[5], 'item-add-product-name': row[6], 'confidence': row[7],
+                             'lift': row[8], 'support': row[9]})
+            return Response({'asso-order': delete_duplicates(asso)})
 
 
 class CustomerReviewRanking(APIView):
@@ -303,9 +322,9 @@ class TopSellerProducts(APIView):
     def get(self, request, format=None):
         products = []
         with connections['oracle_db'].cursor() as c:
-            sql = "SELECT BESTELLPOSITION.PRODUKT_ID, COUNT(BESTELLPOSITION.PRODUKT_ID), BESTELLPOSITION.MENGE FROM BESTELLPOSITION, BESTELLUNG WHERE BESTELLPOSITION.BESTELLUNG_ID = BESTELLUNG.BESTELLUNG_ID group by BESTELLPOSITION.PRODUKT_ID, BESTELLPOSITION.MENGE;"
+            sql = "SELECT BESTELLPOSITION.PRODUKT_ID, COUNT(BESTELLPOSITION.PRODUKT_ID), SUM(BESTELLPOSITION.MENGE) FROM BESTELLPOSITION, BESTELLUNG WHERE BESTELLPOSITION.BESTELLUNG_ID = BESTELLUNG.BESTELLUNG_ID group by BESTELLPOSITION.PRODUKT_ID;"
             c.execute(sql)
             for row in c:
                 # products.append([row[0], row[1]])
-                products.append({'product-id': row[0], 'number-of-sold': row[1]})
-        return Response({'top-seller-products': products})
+                products.append({'product-id': row[0], 'number-of-sold': (row[1] * row[2])})
+        return Response({'top-seller-products': sorted(products, key=itemgetter('number-of-sold'), reverse=True)})
