@@ -195,7 +195,6 @@ class CustomerReviewRanking(APIView):
                   "REZENSION.REZENSION_ID) DESC;"
             c.execute(sql)
             for row in c:
-                # customer.append([row[0], row[1], row[2]])
                 customer.append({'customer-name': row[0], 'customer-account-id': row[1], 'review-count': row[2]})
             return Response({'customer-review-ranking': customer})
 
@@ -207,7 +206,6 @@ class CustomerRevenueRanking(APIView):
             sql = "SELECT KUNDE.NACHNAME, KUNDE.KUNDE_ID, sum(RECHNUNG.SUMME_BRUTTO) FROM KUNDE, WARENKORB, BESTELLPOSITION, BESTELLUNG, RECHNUNG WHERE KUNDE.KUNDE_ID = WARENKORB.KUNDE_ID AND WARENKORB.WARENKORB_ID = BESTELLUNG.WARENKORB_ID AND BESTELLUNG.BESTELLUNG_ID = RECHNUNG.RECHNUNG_ID AND BESTELLUNG.BESTELLUNG_ID= BESTELLPOSITION.BESTELLUNG_ID group by KUNDE.NACHNAME, KUNDE.KUNDE_ID order by sum(RECHNUNG.SUMME_BRUTTO) DESC;"
             c.execute(sql)
             for row in c:
-                # customer.append([row[0], row[1], row[2]])
                 customer.append({'customer-name': row[0], 'customer-account-id': row[1], 'revenue-sum': row[2]})
             return Response({'customer-revenue-ranking': customer})
 
@@ -219,7 +217,6 @@ class TopRatedProducts(APIView):
             sql = "SELECT REZENSION.PRODUKT_ID, RANKING, count(REZENSION.PRODUKT_ID) FROM PRODUKT, REZENSION WHERE PRODUKT.PRODUKT_ID = REZENSION.PRODUKT_ID GROUP BY REZENSION.PRODUKT_ID, RANKING ORDER BY -RANKING ASC, count(REZENSION.PRODUKT_ID) ASC;"
             c.execute(sql)
             for row in c:
-                # products.append([row[0], row[1], row[2]])
                 products.append({'product-id': row[0], 'ranking': row[1], 'ranking-count-for-product': row[2]})
         return Response({'top-rated-products': products})
 
@@ -325,6 +322,5 @@ class TopSellerProducts(APIView):
             sql = "SELECT BESTELLPOSITION.PRODUKT_ID, COUNT(BESTELLPOSITION.PRODUKT_ID), SUM(BESTELLPOSITION.MENGE) FROM BESTELLPOSITION, BESTELLUNG WHERE BESTELLPOSITION.BESTELLUNG_ID = BESTELLUNG.BESTELLUNG_ID group by BESTELLPOSITION.PRODUKT_ID;"
             c.execute(sql)
             for row in c:
-                # products.append([row[0], row[1]])
                 products.append({'product-id': row[0], 'number-of-sold': (row[1] * row[2])})
         return Response({'top-seller-products': sorted(products, key=itemgetter('number-of-sold'), reverse=True)})
