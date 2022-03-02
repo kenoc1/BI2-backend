@@ -135,11 +135,11 @@ class AssociationsMr(APIView):
     def get(self, request, format=None):
         asso = []
         with connections['oracle_db'].cursor() as c:
-            sql = "SELECT RULE_ID, ITEMS_BASE, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEHERR"
+            sql = "SELECT RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEHERR"
             c.execute(sql)
             for row in c:
-                asso.append([row[0], row[1], row[2], row[3], row[4]])
-                # products.append({'customer-name': row[0], 'customer-id': row[1], 'revenue-sum': row[2]})
+                # asso.append([row[0], row[1], row[2], row[3], row[4], row[5]])
+                asso.append({'rule-id': row[0], 'item-base': row[1], 'item-add': row[2], 'confidence': row[3], 'lift': row[4], 'support': row[5]})
             return Response({'asso-order': asso})
 
 
@@ -148,11 +148,11 @@ class AssociationsMs(APIView):
     def get(self, request, format=None):
         asso = []
         with connections['oracle_db'].cursor() as c:
-            sql = "SELECT RULE_ID, ITEMS_BASE, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEFRAU"
+            sql = "SELECT RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEFRAU"
             c.execute(sql)
             for row in c:
-                asso.append([row[0], row[1], row[2], row[3], row[4]])
-                # products.append({'customer-name': row[0], 'customer-id': row[1], 'revenue-sum': row[2]})
+                # asso.append([row[0], row[1], row[2], row[3], row[4], row[5]])
+                asso.append({'rule-id': row[0], 'item-base': row[1], 'item-add': row[2], 'confidence': row[3], 'lift': row[4], 'support': row[5]})
             return Response({'asso-order': asso})
 
 
@@ -161,11 +161,11 @@ class AssociationsOrder(APIView):
     def get(self, request, format=None):
         asso = []
         with connections['oracle_db'].cursor() as c:
-            sql = "SELECT RULE_ID, ITEMS_BASE, CONFIDENCE, LIFT, SUPPORT FROM ASSOBESTELLUNG"
+            sql = "SELECT RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOBESTELLUNG"
             c.execute(sql)
             for row in c:
-                asso.append([row[0], row[1], row[2], row[3], row[4]])
-                # products.append({'customer-name': row[0], 'customer-id': row[1], 'revenue-sum': row[2]})
+                # asso.append([row[0], row[1], row[2], row[3], row[4], row[5]])
+                asso.append({'rule-id': row[0], 'item-base': row[1], 'item-add': row[2], 'confidence': row[3], 'lift': row[4], 'support': row[5]})
             return Response({'asso-order': asso})
 
 
@@ -179,8 +179,8 @@ class CustomerReviewRanking(APIView):
                   "REZENSION.REZENSION_ID) DESC;"
             c.execute(sql)
             for row in c:
-                customer.append([row[0], row[1], row[2]])
-                # products.append({'customer-name': row[0], 'customer-id': row[1], 'revenue-sum': row[2]})
+                # customer.append([row[0], row[1], row[2]])
+                customer.append({'customer-name': row[0], 'customer-account-id': row[1], 'review-count': row[2]})
             return Response({'customer-review-ranking': customer})
 
 
@@ -188,15 +188,11 @@ class CustomerRevenueRanking(APIView):
     def get(self, request, format=None):
         customer = []
         with connections['oracle_db'].cursor() as c:
-            sql = "SELECT KUNDE.NACHNAME, KUNDE.KUNDE_ID, sum(RECHNUNG.SUMME_BRUTTO) FROM KUNDE, WARENKORB, " \
-                  "BESTELLPOSITION, BESTELLUNG, RECHNUNG WHERE KUNDE.KUNDE_ID = WARENKORB.KUNDE_ID AND " \
-                  "WARENKORB.WARENKORB_ID = BESTELLUNG.WARENKORB_ID AND BESTELLUNG.BESTELLUNG_ID = " \
-                  "RECHNUNG.RECHNUNG_ID AND BESTELLUNG.BESTELLUNG_ID= BESTELLPOSITION.BESTELLUNG_ID group by " \
-                  "KUNDE.NACHNAME, KUNDE.KUNDE_ID order by sum(RECHNUNG.SUMME_BRUTTO) DESC; "
+            sql = "SELECT KUNDE.NACHNAME, KUNDE.KUNDE_ID, sum(RECHNUNG.SUMME_BRUTTO) FROM KUNDE, WARENKORB, BESTELLPOSITION, BESTELLUNG, RECHNUNG WHERE KUNDE.KUNDE_ID = WARENKORB.KUNDE_ID AND WARENKORB.WARENKORB_ID = BESTELLUNG.WARENKORB_ID AND BESTELLUNG.BESTELLUNG_ID = RECHNUNG.RECHNUNG_ID AND BESTELLUNG.BESTELLUNG_ID= BESTELLPOSITION.BESTELLUNG_ID group by KUNDE.NACHNAME, KUNDE.KUNDE_ID order by sum(RECHNUNG.SUMME_BRUTTO) DESC;"
             c.execute(sql)
             for row in c:
-                customer.append([row[0], row[1], row[2]])
-                # products.append({'customer-name': row[0], 'customer-id': row[1], 'revenue-sum': row[2]})
+                # customer.append([row[0], row[1], row[2]])
+                customer.append({'customer-name': row[0], 'customer-account-id': row[1], 'revenue-sum': row[2]})
             return Response({'customer-revenue-ranking': customer})
 
 
@@ -204,21 +200,18 @@ class TopRatedProducts(APIView):
     def get(self, request, format=None):
         products = []
         with connections['oracle_db'].cursor() as c:
-            sql = "SELECT REZENSION.PRODUKT_ID, RANKING, count(REZENSION.PRODUKT_ID) FROM PRODUKT, REZENSION WHERE " \
-                  "PRODUKT.PRODUKT_ID = REZENSION.PRODUKT_ID GROUP BY REZENSION.PRODUKT_ID, RANKING ORDER BY -RANKING " \
-                  "ASC, count(REZENSION.PRODUKT_ID) ASC; "
+            sql = "SELECT REZENSION.PRODUKT_ID, RANKING, count(REZENSION.PRODUKT_ID) FROM PRODUKT, REZENSION WHERE PRODUKT.PRODUKT_ID = REZENSION.PRODUKT_ID GROUP BY REZENSION.PRODUKT_ID, RANKING ORDER BY -RANKING ASC, count(REZENSION.PRODUKT_ID) ASC;"
             c.execute(sql)
             for row in c:
-                products.append([row[0], row[1], row[2]])
-                # products.append({'product-id': row[0], 'ranking': row[1], 'ranking-count-for-product': row[2]})
+                # products.append([row[0], row[1], row[2]])
+                products.append({'product-id': row[0], 'ranking': row[1], 'ranking-count-for-product': row[2]})
         return Response({'top-rated-products': products})
 
 
 class OrderCountDay(APIView):
     def get(self, request, format=None):
         with connections['oracle_db'].cursor() as c:
-            sql = "SELECT COUNT(Distinct BESTELLUNG_ID) FROM BESTELLUNG Where BESTELLDATUM between sysdate - 1 AND " \
-                  "sysdate; "
+            sql = "SELECT COUNT(Distinct BESTELLUNG_ID) FROM BESTELLUNG Where BESTELLDATUM between sysdate - 1 AND sysdate;"
             c.execute(sql)
             for row in c:
                 return Response({'orders': row[0]})
@@ -228,8 +221,7 @@ class OrderCountDay(APIView):
 class OrderCountMonth(APIView):
     def get(self, request, format=None):
         with connections['oracle_db'].cursor() as c:
-            sql = "SELECT COUNT(Distinct BESTELLUNG_ID) FROM BESTELLUNG Where BESTELLDATUM between add_months(trunc(" \
-                  "sysdate, 'mm'), -1) and last_day(add_months(trunc(sysdate, 'mm'), -1)); "
+            sql = "SELECT COUNT(Distinct BESTELLUNG_ID) FROM BESTELLUNG Where BESTELLDATUM between add_months(trunc(sysdate, 'mm'), -1) and last_day(add_months(trunc(sysdate, 'mm'), -1));"
             c.execute(sql)
             for row in c:
                 return Response({'orders': row[0]})
@@ -254,8 +246,9 @@ class OrderRevenueDay(APIView):
                   "sysdate - " + str(days) + " AND sysdate"
             c.execute(sql)
             for row in c:
+                if row[0] is None:
+                    return Response({'order-revenue': 0})
                 return Response({'order-revenue': row[0]})
-            return Response({'order-revenue': 0})
 
 
 class OrderRevenueMonth(APIView):
@@ -266,8 +259,9 @@ class OrderRevenueMonth(APIView):
                   "sysdate - " + str(days) + " AND sysdate"
             c.execute(sql)
             for row in c:
+                if row[0] is None:
+                    return Response({'order-revenue': 0})
                 return Response({'order-revenue': row[0]})
-            return Response({'order-revenue': 0})
 
 
 class OrderRevenue(APIView):
@@ -290,6 +284,7 @@ class Orders(APIView):
             c.execute(sql)
             for row in c:
                 orders.append([row[0], row[1]])
+                # orders.append({'date': row[0], 'order-count': row[1]})
         return Response({'orders': orders})
 
 
@@ -303,6 +298,7 @@ class Revenue(APIView):
             c.execute(sql)
             for row in c:
                 revenue.append([row[0], row[1]])
+                # revenue.append({'date': row[0], 'revenue-sum': row[1]})
         return Response({'revenue': revenue})
 
 
@@ -311,10 +307,9 @@ class TopSellerProducts(APIView):
     def get(self, request, format=None):
         products = []
         with connections['oracle_db'].cursor() as c:
-            sql = "SELECT BESTELLPOSITION.PRODUKT_ID, COUNT(BESTELLPOSITION.PRODUKT_ID) FROM BESTELLPOSITION, " \
-                  "BESTELLUNG WHERE BESTELLPOSITION.BESTELLUNG_ID = BESTELLUNG.BESTELLUNG_ID group by " \
-                  "BESTELLPOSITION.PRODUKT_ID; "
+            sql = "SELECT BESTELLPOSITION.PRODUKT_ID, COUNT(BESTELLPOSITION.PRODUKT_ID) FROM BESTELLPOSITION, BESTELLUNG WHERE BESTELLPOSITION.BESTELLUNG_ID = BESTELLUNG.BESTELLUNG_ID group by BESTELLPOSITION.PRODUKT_ID;"
             c.execute(sql)
             for row in c:
-                products.append([row[0], row[1]])
+                # products.append([row[0], row[1]])
+                products.append({'product-id': row[0], 'number-of-sold': row[1]})
         return Response({'top-seller-products': products})

@@ -8,6 +8,7 @@ urlpatterns = [
     path('product/<slug:product_slug>/', views.ProductDetail.as_view()),
     url(r'^products/(?P<family_slug>[a-z0-9-+()]+)/$', views.FamilyDetail.as_view()),
     path('one/', views.OneProduct.as_view()),
+
     path('order-count-day/', views.OrderCountDay.as_view()),
     path('order-count-month/', views.OrderCountMonth.as_view()),
     path('order-count/', views.OrderCount.as_view()),
