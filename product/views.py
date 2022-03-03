@@ -1,18 +1,14 @@
 import json
-
 import cx_Oracle
 import re
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import Http404
-
 from django.db import connections
 from itertools import combinations
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-
 from util.page_object import Page_object
 from .models import Product, ProductSubcategory, ProductFamily, ProductDivision, ProductCategory
 from .serializers import ProductSerializer, ProductSubcategorySerializer, ProductFamilySerializer, \
@@ -43,14 +39,10 @@ class PersonalRecommendationsList(APIView):
             c.execute(sql)
             for row in c:
                 product_skus.append(row[0])
-
         products = get_products_by_skus(product_skus)
         if len(products) < 20:
             products = add_discounts(products)
-
         serializer = ProductSerializer(products, many=True)
-        print(serializer.data)
-
         return Response(serializer.data)
 
 
@@ -67,10 +59,8 @@ class ProductDetail(APIView):
         associations = get_association(product.sku)
         if len(associations) < 10:
             associations = add_discounts(associations)
-
         serializer_product = ProductSerializer(product)
         serializer_associations = ProductSerializer(associations, many=True)
-
         return Response({'product': serializer_product.data, 'associations': serializer_associations.data})
 
 
@@ -104,19 +94,15 @@ class FamilyDetail(APIView):
 
     def get(self, request, family_slug):
         page_index = get_page_index(request)
-        print(page_index)
         family = self.get_object(family_slug)
         divisions = ProductDivision.objects.filter(product_family=family)
         products = Product.objects.filter(subcategory__product_category__product_division__in=divisions).exclude(
             image__isnull=True).exclude(image="Kein Bild")
         serializer_family = ProductFamilySerializer(family)
-
         serializer_products = ProductSerializer(products, many=True)
         p = Paginator(serializer_products.data, 20)
         current_page = p.page(page_index)
-        print(current_page)
         page_object = Page_object(current_page, p.num_pages)
-        print(page_object)
         return Response({'page': json.dumps(page_object.__dict__), 'family_data': serializer_family.data})
 
 
@@ -180,7 +166,7 @@ class SubcategoryDetail(APIView):
         return Response({'page': json.dumps(page_object.__dict__), 'family_data': serializer_family.data})
 
 
-class FavoritProductbyFamily(APIView):
+class FavoriteProductByFamilySlug(APIView):
 
     def get_product_SKU(self, family_slug):
         try:
@@ -200,7 +186,6 @@ class FavoritProductbyFamily(APIView):
                                     order by Anzahl desc
                                     fetch first 10 rows only;""")
                 for row in cursor:
-                    print(row)
                     productSKU.append(row[0])
             return productSKU
         except cx_Oracle.Error as error:
@@ -212,7 +197,6 @@ class FavoritProductbyFamily(APIView):
         productSKU = self.get_product_SKU(family_slug)
         product = get_products_by_skus(productSKU)
         serializer = ProductSerializer(product, many=True)
-
         return Response(serializer.data)
 
 
@@ -225,11 +209,10 @@ def get_products_by_skus(skus):
     products = []
     for sku in skus:
         products.append(get_product_by_sku(sku))
-
     return products
 
 
-class FavoritProduct(APIView):
+class FavoriteProduct(APIView):
 
     def get_product_SKU(self):
         try:
@@ -254,7 +237,6 @@ class FavoritProduct(APIView):
         print(productSKU)
         product = get_products_by_skus(productSKU)
         serializer = ProductSerializer(product, many=True)
-
         return Response(serializer.data)
 
 
@@ -267,16 +249,13 @@ class CartRecommendationsList(APIView):
             skus = get_associations_two_products(products)
         else:
             skus = get_associations_more_products(products)
-
         for sku in products:
             one_product_associations = get_associations_from_db(sku)
             for association_sku in one_product_associations:
                 skus.append(association_sku)
-
         associations = get_products_by_skus(list(set(skus)))
         associations = add_discounts(associations)
         serializer = ProductSerializer(associations, many=True)
-        print(serializer.data)
         return Response(serializer.data)
 
 
@@ -333,8 +312,6 @@ def search(request):
     if query:
         products = Product.objects.filter(
             (Q(name__icontains=query) | Q(description__icontains=query)) & Q(origin=1))
-
-        print(Product.objects)
         serializer = ProductSerializer(products, many=True)
         p = Paginator(serializer.data, 20)
         current_page = p.page(page_index)
@@ -344,11 +321,8 @@ def search(request):
         return Response({"page": []})
 
 
-
-
 def get_association(sku):
     products = []
-
     if sku:
         products = get_products_by_skus(get_associations_from_db(sku))
     return products
@@ -358,7 +332,6 @@ def add_discounts(associations):
     products = Product.objects.exclude(image__isnull=True).order_by('-discount')[:10]
     for product in products:
         associations.append(product)
-
     return associations[:10]
 
 
@@ -370,5 +343,4 @@ def get_associations_from_db(sku):
         c.execute(sql)
         for row in c:
             associations.append(re.search(r'\d+', row[0]).group())
-
     return associations
