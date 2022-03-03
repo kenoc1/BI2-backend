@@ -382,3 +382,88 @@ class TopSellerProducts(APIView):
             for row in c:
                 products.append({'product-id': row[0], 'number-of-sold': (row[1] * row[2])})
         return Response({'top-seller-products': sorted(products, key=itemgetter('number-of-sold'), reverse=True)})
+
+
+class LoginCountDay(APIView):
+    def get(self, request, format=None):
+        days = 1
+        return Response({'order-revenue': login_count(days=days)})
+
+
+class LoginCountWeek(APIView):
+    def get(self, request, format=None):
+        days = 7
+        return Response({'order-revenue': login_count(days=days)})
+
+
+class LoginCountMonth(APIView):
+    def get(self, request, format=None):
+        days = 30
+        return Response({'order-revenue': login_count(days=days)})
+
+
+def login_count(days: int):
+    with connections['oracle_db'].cursor() as c:
+        sql = "select COUNT(ID) from AUTH_USER where LAST_LOGIN between " \
+              "sysdate - " + str(days) + " AND sysdate"
+        c.execute(sql)
+        for row in c:
+            if row[0] is None:
+                return 0
+            return row[0]
+
+
+class OrderStatusCanceledDay(APIView):
+    def get(self, request, format=None):
+        days = 1
+        return Response({'status-canceled': order_status_canceled(days=days)})
+
+
+class OrderStatusCanceledWeek(APIView):
+    def get(self, request, format=None):
+        days = 7
+        return Response({'status-canceled': order_status_canceled(days=days)})
+
+
+class OrderStatusCanceledMonth(APIView):
+    def get(self, request, format=None):
+        days = 30
+        return Response({'status-canceled': order_status_canceled(days=days)})
+
+
+class OrderStatusCompletedDay(APIView):
+    def get(self, request, format=None):
+        days = 1
+        return Response({'status-completed': order_status_completed(days=days)})
+
+
+class OrderStatusCompletedWeek(APIView):
+    def get(self, request, format=None):
+        days = 7
+        return Response({'status-completed': order_status_completed(days=days)})
+
+
+class OrderStatusCompletedMonth(APIView):
+    def get(self, request, format=None):
+        days = 30
+        return Response({'status-completed': order_status_completed(days=days)})
+
+
+def order_status_completed(days: int):
+    with connections['oracle_db'].cursor() as c:
+        sql = "Select COUNT(BESTELLUNG_ID) FROM BESTELLUNG WHERE STATUS = 'Abgeschlossen' AND BESTELLDATUM between sysdate - " + str(days) + " AND sysdate"
+        c.execute(sql)
+        for row in c:
+            if row[0] is None:
+                return 0
+            return row[0]
+
+
+def order_status_canceled(days: int):
+    with connections['oracle_db'].cursor() as c:
+        sql = "Select COUNT(BESTELLUNG_ID) FROM BESTELLUNG WHERE STATUS = 'Storniert' AND BESTELLDATUM between sysdate - " + str(days) + " AND sysdate"
+        c.execute(sql)
+        for row in c:
+            if row[0] is None:
+                return 0
+            return row[0]
