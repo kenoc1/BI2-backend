@@ -348,6 +348,7 @@ class OrdersWeek(APIView):
                     if cdates[x] == current_date:
                         rdates.append(self.beautify_date_string(str(current_date)))
                         values.append(cursor_data[x][1])
+                        current_date = current_date + timedelta(1)
                         x += 1
                 else:
                     rdates.append(self.beautify_date_string(str(current_date)))
