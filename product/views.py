@@ -340,14 +340,19 @@ class OrdersWeek(APIView):
             x = 0
             current_date = date.today() - timedelta(7)
             while len(values) < 7:
-                while cdates[x] != current_date:
+                if len(cdates) > x:
+                    while cdates[x] != current_date:
+                        rdates.append(self.beautify_date_string(str(current_date)))
+                        values.append(0)
+                        current_date = current_date + timedelta(1)
+                    if cdates[x] == current_date:
+                        rdates.append(self.beautify_date_string(str(current_date)))
+                        values.append(cursor_data[x][1])
+                        x += 1
+                else:
                     rdates.append(self.beautify_date_string(str(current_date)))
                     values.append(0)
                     current_date = current_date + timedelta(1)
-                if cdates[x] == current_date:
-                    rdates.append(self.beautify_date_string(str(current_date)))
-                    values.append(cursor_data[x][1])
-                    x += 1
         orders.append(rdates)
         orders.append(values)
         return Response({'orders': orders})
