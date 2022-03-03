@@ -2,8 +2,6 @@ from django.urls import path, include, re_path
 from django.conf.urls import url, include
 from product import views
 
-string1 = "/products/food/eggs"
-string1 = "/products/food"
 
 urlpatterns = [
     path('latest-products/', views.LatestProductsList.as_view()),
