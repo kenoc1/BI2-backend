@@ -25,8 +25,10 @@ urlpatterns = [
     path('order-status-completed-week/', views.OrderStatusCompletedWeek.as_view()),
     path('order-status-completed-month/', views.OrderStatusCompletedMonth.as_view()),
 
-    path('history-orders/', views.Orders.as_view()),
-    path('history-revenue/', views.Revenue.as_view()),
+    path('history-orders-100/', views.OrdersOneHundredDays.as_view()),
+    path('history-orders-7/', views.OrdersWeek.as_view()),
+    path('history-revenue-100/', views.RevenueOneHundredDays.as_view()),
+    path('history-revenue-7/', views.RevenueWeek.as_view()),
     path('top-seller-products/', views.TopSellerProducts.as_view()),
     path('top-rated-products/', views.TopRatedProducts.as_view()),
     path('customer-review-ranking/', views.CustomerReviewRanking.as_view()),

@@ -311,117 +311,83 @@ class OrderRevenue(APIView):
             return Response({'order-revenue': 0})
 
 
-class Orders(APIView):
+def beautify_date_string(string: str):
+    lst = string.split("-")
+    return f"{lst[2]}/{lst[1]}/{lst[0][2:]}"
 
-    @staticmethod
-    def beautify_date_string(string: str):
-        lst = string.split("-")
-        return f"{lst[2]}/{lst[1]}/{lst[0][2:]}"
 
-    def get(self, request, format=None):
-        days = 100
-        rdates = []
-        values = []
+def get_data_with_aggregated_dates(sql: str, days: int):
+    rdates = []
+    values = []
 
-        with connections['oracle_db'].cursor() as c:
-            sql = "select TRUNC(RECHNUNGSDATUM), count(RECHNUNG_ID) as ANZAHL_KAEUFE from RECHNUNG where " \
-                  "RECHNUNGSDATUM between sysdate - " + str(
-                days) + " AND sysdate group by TRUNC(RECHNUNGSDATUM) order by TRUNC(RECHNUNGSDATUM)"
-            c.execute(sql)
-            cursor_data = c.fetchall()
+    with connections['oracle_db'].cursor() as c:
+        c.execute(sql)
+        cursor_data = c.fetchall()
 
-        cdates = [elem[0].date() for elem in cursor_data]
-        if len(cdates) == 0:
-            rdates = [date.today() - timedelta(i) for i in [0, 1, 2, 3, 4, 5, 6, 7]]
-            values = [0, 0, 0, 0, 0, 0, 0]
-        else:
-            cdate_index = 0
-            current_date = date.today() - timedelta(7)
-            while len(values) < 7:
-                if len(cdates) > cdate_index:
-                    while cdates[cdate_index] != current_date:
-                        rdates.append(self.beautify_date_string(str(current_date)))
-                        values.append(0)
-                        current_date = current_date + timedelta(1)
-                    if cdates[cdate_index] == current_date:
-                        rdates.append(self.beautify_date_string(str(current_date)))
-                        values.append(cursor_data[cdate_index][1])
-                        current_date = current_date + timedelta(1)
-                        cdate_index += 1
-                else:
-                    rdates.append(self.beautify_date_string(str(current_date)))
+    cdates = [elem[0].date() for elem in cursor_data]
+    if len(cdates) == 0:
+        rdates = [date.today() - timedelta(i) for i in range(days)]
+        for i in range(days):
+            values.append(i)
+    else:
+        cdate_index = 0
+        current_date = date.today() - timedelta(days)
+        while len(values) < days:
+            if len(cdates) > cdate_index:
+                while cdates[cdate_index] != current_date:
+                    rdates.append(beautify_date_string(str(current_date)))
                     values.append(0)
                     current_date = current_date + timedelta(1)
-        orders = [rdates, values]
-        return Response({'orders': orders})
+                if cdates[cdate_index] == current_date:
+                    rdates.append(beautify_date_string(str(current_date)))
+                    values.append(cursor_data[cdate_index][1])
+                    current_date = current_date + timedelta(1)
+                    cdate_index += 1
+            else:
+                rdates.append(beautify_date_string(str(current_date)))
+                values.append(0)
+                current_date = current_date + timedelta(1)
+    return [rdates, values]
+
+
+def get_revenue_sql_statement(days: int) -> str:
+    return "select TRUNC(RECHNUNGSDATUM), sum(SUMME_BRUTTO) as ANZAHL_KAEUFE from RECHNUNG where " \
+           "RECHNUNGSDATUM between sysdate - " + str(
+        days) + " AND sysdate group by TRUNC(RECHNUNGSDATUM) order by TRUNC(RECHNUNGSDATUM)"
+
+
+def get_orders_sql_statement(days: int) -> str:
+    return "select TRUNC(RECHNUNGSDATUM), count(RECHNUNG_ID) as ANZAHL_KAEUFE from RECHNUNG where " \
+           "RECHNUNGSDATUM between sysdate - " + str(
+        days) + " AND sysdate group by TRUNC(RECHNUNGSDATUM) order by TRUNC(RECHNUNGSDATUM)"
+
+
+class OrdersOneHundredDays(APIView):
+    def get(self, request, format=None):
+        days = 100
+        sql = get_orders_sql_statement(days=days)
+        return Response({'orders': get_data_with_aggregated_dates(sql, days)})
+
+
+class OrdersWeek(APIView):
+    def get(self, request, format=None):
+        days = 7
+        sql = get_orders_sql_statement(days=days)
+        return Response({'orders': get_data_with_aggregated_dates(sql, days)})
+
+
+class RevenueOneHundredDays(APIView):
+    def get(self, request, format=None):
+        days = 100
+        sql = get_revenue_sql_statement(days=days)
+        return Response({'revenue': get_data_with_aggregated_dates(sql, days)})
 
 
 class RevenueWeek(APIView):
-    @staticmethod
-    def beautify_date_string(string: str):
-        lst = string.split("-")
-        return f"{lst[2]}/{lst[1]}/{lst[0][2:]}"
-
     def get(self, request, format=None):
         days = 7
-        rdates = []
-        values = []
-
-        with connections['oracle_db'].cursor() as c:
-            sql = "select TRUNC(RECHNUNGSDATUM), sum(SUMME_BRUTTO) as ANZAHL_KAEUFE from RECHNUNG where " \
-                  "RECHNUNGSDATUM between sysdate - " + str(days) + " AND sysdate group by TRUNC(RECHNUNGSDATUM)"
-            c.execute(sql)
-            cursor_data = c.fetchall()
-
-        cdates = [elem[0].date() for elem in cursor_data]
-        if len(cdates) == 0:
-            rdates = [date.today() - timedelta(i) for i in [0, 1, 2, 3, 4, 5, 6, 7]]
-            values = [0, 0, 0, 0, 0, 0, 0]
-        else:
-            cdate_index = 0
-            current_date = date.today() - timedelta(7)
-            while len(values) < 7:
-                if len(cdates) > cdate_index:
-                    while cdates[cdate_index] != current_date:
-                        rdates.append(self.beautify_date_string(str(current_date)))
-                        values.append(0)
-                        current_date = current_date + timedelta(1)
-                    if cdates[cdate_index] == current_date:
-                        rdates.append(self.beautify_date_string(str(current_date)))
-                        values.append(cursor_data[cdate_index][1])
-                        current_date = current_date + timedelta(1)
-                        cdate_index += 1
-                else:
-                    rdates.append(self.beautify_date_string(str(current_date)))
-                    values.append(0)
-                    current_date = current_date + timedelta(1)
-        orders = [rdates, values]
-        return Response({'revenue': orders})
-
-    # def get(self, request, format=None):
-    #     days = 7
-    #     revenue = []
-    #     with connections['oracle_db'].cursor() as c:
-    #         sql = "select TRUNC(RECHNUNGSDATUM), sum(SUMME_BRUTTO) as ANZAHL_KAEUFE from RECHNUNG where " \
-    #               "RECHNUNGSDATUM between sysdate - " + str(days) + " AND sysdate group by TRUNC(RECHNUNGSDATUM)"
-    #         c.execute(sql)
-    #         for row in c:
-    #             revenue.append([row[0], row[1]])
-    #             # revenue.append({'date': row[0], 'revenue-sum': row[1]})
-    #     return Response({'revenue': revenue})
-
-class Revenue(APIView):
-    def get(self, request, format=None):
-        days = 100
-        revenue = []
-        with connections['oracle_db'].cursor() as c:
-            sql = "select TRUNC(RECHNUNGSDATUM), sum(SUMME_BRUTTO) as ANZAHL_KAEUFE from RECHNUNG where " \
-                  "RECHNUNGSDATUM between sysdate - " + str(days) + " AND sysdate group by TRUNC(RECHNUNGSDATUM)"
-            c.execute(sql)
-            for row in c:
-                revenue.append([row[0], row[1]])
-                # revenue.append({'date': row[0], 'revenue-sum': row[1]})
-        return Response({'revenue': revenue})
+        sql = get_revenue_sql_statement(days=days)
+        return Response({'revenue': get_data_with_aggregated_dates(sql, days)})
 
 
 class TopSellerProducts(APIView):
