@@ -320,7 +320,6 @@ class OrdersWeek(APIView):
 
     def get(self, request, format=None):
         days = 7
-        orders = []
         rdates = []
         values = []
 
@@ -332,30 +331,28 @@ class OrdersWeek(APIView):
             cursor_data = c.fetchall()
 
         cdates = [elem[0].date() for elem in cursor_data]
-
         if len(cdates) == 0:
             rdates = [date.today() - timedelta(i) for i in [0, 1, 2, 3, 4, 5, 6, 7]]
             values = [0, 0, 0, 0, 0, 0, 0]
         else:
-            x = 0
+            cdate_index = 0
             current_date = date.today() - timedelta(7)
             while len(values) < 7:
-                if len(cdates) > x:
-                    while cdates[x] != current_date:
+                if len(cdates) > cdate_index:
+                    while cdates[cdate_index] != current_date:
                         rdates.append(self.beautify_date_string(str(current_date)))
                         values.append(0)
                         current_date = current_date + timedelta(1)
-                    if cdates[x] == current_date:
+                    if cdates[cdate_index] == current_date:
                         rdates.append(self.beautify_date_string(str(current_date)))
-                        values.append(cursor_data[x][1])
+                        values.append(cursor_data[cdate_index][1])
                         current_date = current_date + timedelta(1)
-                        x += 1
+                        cdate_index += 1
                 else:
                     rdates.append(self.beautify_date_string(str(current_date)))
                     values.append(0)
                     current_date = current_date + timedelta(1)
-        orders.append(rdates)
-        orders.append(values)
+        orders = [rdates, values]
         return Response({'orders': orders})
 
 
@@ -451,7 +448,8 @@ class OrderStatusCompletedMonth(APIView):
 
 def order_status_completed(days: int):
     with connections['oracle_db'].cursor() as c:
-        sql = "Select COUNT(BESTELLUNG_ID) FROM BESTELLUNG WHERE STATUS = 'Abgeschlossen' AND BESTELLDATUM between sysdate - " + str(days) + " AND sysdate"
+        sql = "Select COUNT(BESTELLUNG_ID) FROM BESTELLUNG WHERE STATUS = 'Abgeschlossen' AND BESTELLDATUM between sysdate - " + str(
+            days) + " AND sysdate"
         c.execute(sql)
         for row in c:
             if row[0] is None:
@@ -461,7 +459,8 @@ def order_status_completed(days: int):
 
 def order_status_canceled(days: int):
     with connections['oracle_db'].cursor() as c:
-        sql = "Select COUNT(BESTELLUNG_ID) FROM BESTELLUNG WHERE STATUS = 'Storniert' AND BESTELLDATUM between sysdate - " + str(days) + " AND sysdate"
+        sql = "Select COUNT(BESTELLUNG_ID) FROM BESTELLUNG WHERE STATUS = 'Storniert' AND BESTELLDATUM between sysdate - " + str(
+            days) + " AND sysdate"
         c.execute(sql)
         for row in c:
             if row[0] is None:
