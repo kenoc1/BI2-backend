@@ -2,8 +2,6 @@ from django.urls import path, include, re_path
 from django.conf.urls import url, include
 from product import views
 
-string1 = "/products/food/eggs"
-string1 = "/products/food"
 
 urlpatterns = [
     path('latest-products/', views.LatestProductsList.as_view()),
@@ -15,7 +13,7 @@ urlpatterns = [
     # path('products/<slug:family_slug>/<slug:division_slug>/', views.DivisionDetail.as_view()),
     path('categories/', views.Categories.as_view()),
     path('favoritProduct/', views.FavoriteProduct.as_view()),
-    url(r'^products/(?P<family_slug>[a-z0-9-+()]+)/$', views.FamilyDetail.as_view()),
+    # url(r'^products/(?P<family_slug>[a-z0-9-+()]+)/$', views.FamilyDetail.as_view()),
     path('one/', views.OneProduct.as_view()),
     path('personal-recommendations/', views.PersonalRecommendationsList.as_view()),
     path('cart-recommendations/', views.CartRecommendationsList.as_view()),

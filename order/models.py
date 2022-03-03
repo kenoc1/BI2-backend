@@ -6,7 +6,7 @@ from customer.models import Customer
 
 
 class Cart(models.Model):
-    cart_id = models.FloatField(primary_key=True, db_column='warenkorb_id')
+    cart_id = models.AutoField(primary_key=True, db_column='warenkorb_id')
     customer = models.ForeignKey(Customer, models.DO_NOTHING, blank=True, null=True, db_column='kunde_id')
     total_price = models.FloatField(db_column='gesamtpreis')
     total_quantity = models.FloatField(blank=True, null=True, db_column='gesamtmenge')
@@ -29,9 +29,7 @@ class CartProduct(models.Model):
 
 class Order(models.Model):
     order_id = models.FloatField(primary_key=True, db_column='bestellung_id')
-    # warenkorb = models.ForeignKey('Warenkorb', models.DO_NOTHING, blank=True, null=True, db_column='')
-    # rabattcode = models.ForeignKey('Rabattcode', models.DO_NOTHING, blank=True, null=True, db_column='')
-    # status = models.CharField(max_length=30, db_column='')
+    cart = models.ForeignKey(Cart, models.DO_NOTHING, blank=True, null=True, db_column='warenkorb_id')
     order_date = models.DateField(db_column='bestelldatum')
     total_quantity = models.FloatField(db_column='gesamtmenge')
     origin = models.FloatField(db_column="datenherkunft_id", blank=True, null=True)
@@ -40,8 +38,8 @@ class Order(models.Model):
         managed = False
         db_table = 'bestellung'
 
-    def __str__(self):
-        return self.order_id
+    # def __str__(self):
+    #     return self.order_id
 
 
 class OrderItem(models.Model):
@@ -58,3 +56,15 @@ class OrderItem(models.Model):
         return '%s' % self.order_item_id
 
 
+class Bill(models.Model):
+    bill_id = models.AutoField(primary_key=True, db_column='rechnung_id')
+    order = models.ForeignKey(Order, models.DO_NOTHING, db_column='bestellung_id')
+    total_gross = models.FloatField(db_column='summe_brutto')
+    total_net = models.FloatField(db_column='summe_netto')
+
+    class Meta:
+        managed = False
+        db_table = 'bestellung'
+
+    def __str__(self):
+        return self.order_id

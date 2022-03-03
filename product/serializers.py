@@ -22,6 +22,14 @@ class ProductSerializer(serializers.ModelSerializer):
         )
 
 
+class ProductForOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = (
+            "name",
+            "get_price",
+        )
+
 class ProductSubcategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductSubcategory
