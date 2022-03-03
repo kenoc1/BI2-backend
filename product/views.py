@@ -1,11 +1,15 @@
 import json
 import cx_Oracle
 import re
+from customer.models import Customer
+from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import Http404
 from django.db import connections
 from itertools import combinations
+
+from rest_framework import authentication, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -29,21 +33,29 @@ def get_page_index(request):
     else:
         return request.GET.get('pg')
 
+
 class PersonalRecommendationsList(APIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
     def get(self, request, format=None):
-        product_skus = []
-        customer_id = 5769  # TODO: get id from logged user
-        with connections['default'].cursor() as c:
-            sql = f"SELECT PRODUKT_SKU, MATCH FROM EMPF_PERSONENBEZOGEN " \
-                  f"WHERE KUNDE_ID = {customer_id} ORDER BY MATCH DESC"
-            c.execute(sql)
-            for row in c:
-                product_skus.append(row[0])
-        products = get_products_by_skus(product_skus)
-        if len(products) < 20:
-            products = add_discounts(products)
-        serializer = ProductSerializer(products, many=True)
-        return Response(serializer.data)
+        print(request.user)
+        customer = Customer.objects.filter(django_user__in=User.objects.filter(username=request.user))[:1].get()
+        if customer:
+            customer_id = customer.customer_id
+            product_skus = []
+            with connections['default'].cursor() as c:
+                sql = f"SELECT PRODUKT_SKU, MATCH FROM EMPF_PERSONENBEZOGEN " \
+                      f"WHERE KUNDE_ID = {customer_id} ORDER BY MATCH DESC"
+                c.execute(sql)
+                for row in c:
+                    product_skus.append(row[0])
+            products = get_products_by_skus(product_skus)
+            if len(products) < 20:
+                products = add_discounts(products)
+            serializer = ProductSerializer(products, many=True)
+            return Response(serializer.data)
+        return Response()
 
 
 class OneProduct(APIView):
@@ -167,7 +179,6 @@ class SubcategoryDetail(APIView):
 
 
 class FavoriteProductByFamilySlug(APIView):
-
     def get_product_SKU(self, family_slug):
         try:
             productSKU = []
@@ -193,7 +204,6 @@ class FavoriteProductByFamilySlug(APIView):
             print(error)
 
     def get(self, request, family_slug):
-
         productSKU = self.get_product_SKU(family_slug)
         product = get_products_by_skus(productSKU)
         serializer = ProductSerializer(product, many=True)
@@ -213,7 +223,6 @@ def get_products_by_skus(skus):
 
 
 class FavoriteProduct(APIView):
-
     def get_product_SKU(self):
         try:
             productSKU = []
