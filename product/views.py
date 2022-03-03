@@ -16,7 +16,8 @@ from rest_framework.decorators import api_view
 from util.page_object import Page_object
 from .models import Product, ProductSubcategory, ProductFamily, ProductDivision, ProductCategory
 from .serializers import ProductSerializer, ProductSubcategorySerializer, ProductFamilySerializer, \
-    ProductDivisionSerializer, ProductCategorySerializer
+    ProductCategorySerializer, ProductDivisionSerializer
+from django.db import connections
 
 
 class LatestProductsList(APIView):
@@ -32,7 +33,6 @@ def get_page_index(request):
     else:
         return request.GET.get('pg')
 
-
 class PersonalRecommendationsList(APIView):
     def get(self, request, format=None):
         product_skus = []
@@ -43,65 +43,14 @@ class PersonalRecommendationsList(APIView):
             c.execute(sql)
             for row in c:
                 product_skus.append(row[0])
+
         products = get_products_by_skus(product_skus)
         if len(products) < 20:
             products = add_discounts(products)
+
         serializer = ProductSerializer(products, many=True)
-        return Response(serializer.data)
+        print(serializer.data)
 
-
-class FavoriteProductByFamilySlug(APIView):
-    def get_product_by_slug(self, family_slug):
-        try:
-            product_skus = []
-            with connections['default'].cursor() as cursor:
-                cursor.execute(f"""select distinct P.SKU, count(P.SKU) as anzahl
-                                    from BESTELLUNG
-                                        join BESTELLPOSITION B on BESTELLUNG.BESTELLUNG_ID = B.BESTELLUNG_ID
-                                        join PRODUKT P on P.PRODUKT_ID = B.PRODUKT_ID
-                                        join PRODUKT_SUBKATEGORIE PS on P.PRODUKTKLASSE_ID = PS.PRODUKT_SUBKATEGORIE_ID
-                                        join PRODUKT_KATEGORIE PK on PS.PRODUKT_KATEGORIE_ID = PK.PRODUKT_KATEGORIE_ID
-                                        join PRODUKT_SPARTE S on PK.PRODUKT_SPARTE_ID = S.PRODUKT_SPARTE_ID
-                                        join PRODUKT_FAMILIE PF on S.PRODUKT_FAMILIE_ID = PF.PRODUKT_FAMILIE_ID
-                                    where PF.SLUG = '{family_slug}'
-                                    group by P.SKU
-                                    order by Anzahl desc;""")
-                for row in cursor:
-                    product_skus.append(row[0])
-            return product_skus[:10]
-        except cx_Oracle.Error as error:
-            print('Error occurred:')
-            print(error)
-
-    def get(self, request, family_slug):
-        product_skus = self.get_product_by_slug(family_slug)
-        products = get_products_by_skus(product_skus)
-        serializer = ProductSerializer(products, many=True)
-        return Response(serializer.data)
-
-
-class FavoriteProduct(APIView):
-    def get_product_skus(self):
-        try:
-            product_skus = []
-            with connections['default'].cursor() as cursor:
-                cursor.execute(f"""select distinct P.SKU, count(P.SKU) as anzahl
-                                    from BESTELLUNG
-                                        join BESTELLPOSITION B on BESTELLUNG.BESTELLUNG_ID = B.BESTELLUNG_ID
-                                        join PRODUKT P on P.PRODUKT_ID = B.PRODUKT_ID
-                                    group by P.SKU
-                                    order by Anzahl desc;""")
-                for row in cursor:
-                    product_skus.append(row[0])
-            return product_skus[:10]
-        except cx_Oracle.Error as error:
-            print('Error occurred:')
-            print(error)
-
-    def get(self, request):
-        product_skus = self.get_product_skus()
-        products = get_products_by_skus(product_skus)
-        serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
 
 
@@ -135,10 +84,14 @@ class Categories(APIView):
                 for category in ProductCategory.objects.filter(product_division=division):
                     subcategories = []
                     for subcategory in ProductSubcategory.objects.filter(product_category=category):
-                        subcategories.append({'description': subcategory.description, 'slug': subcategory.get_absolute_url()})
-                    categories.append({'description': category.description, 'slug': category.get_absolute_url(), 'subcategories': subcategories})
-                divisions.append({'description': division.description, 'slug': division.get_absolute_url(), 'categories': categories})
-            families.append({'description': family.description, 'slug': family.get_absolute_url(), 'divisions': divisions})
+                        subcategories.append(
+                            {'description': subcategory.description, 'slug': subcategory.get_absolute_url()})
+                    categories.append({'description': category.description, 'slug': category.get_absolute_url(),
+                                       'subcategories': subcategories})
+                divisions.append({'description': division.description, 'slug': division.get_absolute_url(),
+                                  'categories': categories})
+            families.append(
+                {'description': family.description, 'slug': family.get_absolute_url(), 'divisions': divisions})
         return Response(families)
 
 
@@ -227,6 +180,84 @@ class SubcategoryDetail(APIView):
         return Response({'page': json.dumps(page_object.__dict__), 'family_data': serializer_family.data})
 
 
+class FavoritProductbyFamily(APIView):
+
+    def get_product_SKU(self, family_slug):
+        try:
+            productSKU = []
+            print(family_slug)
+            with connections['default'].cursor() as cursor:
+                cursor.execute(f"""select distinct P.SKU, count(P.SKU) as anzahl
+                                    from BESTELLUNG
+                                             join BESTELLPOSITION B on BESTELLUNG.BESTELLUNG_ID = B.BESTELLUNG_ID
+                                             join PRODUKT P on P.PRODUKT_ID = B.PRODUKT_ID
+                                             join PRODUKT_SUBKATEGORIE PS on P.PRODUKTKLASSE_ID = PS.PRODUKT_SUBKATEGORIE_ID
+                                             join PRODUKT_KATEGORIE PK on PS.PRODUKT_KATEGORIE_ID = PK.PRODUKT_KATEGORIE_ID
+                                             join PRODUKT_SPARTE S on PK.PRODUKT_SPARTE_ID = S.PRODUKT_SPARTE_ID
+                                             join PRODUKT_FAMILIE PF on S.PRODUKT_FAMILIE_ID = PF.PRODUKT_FAMILIE_ID
+                                    where PF.SLUG = '{family_slug}'
+                                    group by P.SKU
+                                    order by Anzahl desc
+                                    fetch first 10 rows only;""")
+                for row in cursor:
+                    print(row)
+                    productSKU.append(row[0])
+            return productSKU
+        except cx_Oracle.Error as error:
+            print('Error occurred:')
+            print(error)
+
+    def get(self, request, family_slug):
+
+        productSKU = self.get_product_SKU(family_slug)
+        product = get_products_by_skus(productSKU)
+        serializer = ProductSerializer(product, many=True)
+
+        return Response(serializer.data)
+
+
+def get_product_by_sku(req_sku):
+    product = Product.objects.filter(Q(sku=req_sku))[:1].get()
+    return product
+
+
+def get_products_by_skus(skus):
+    products = []
+    for sku in skus:
+        products.append(get_product_by_sku(sku))
+
+    return products
+
+
+class FavoritProduct(APIView):
+
+    def get_product_SKU(self):
+        try:
+            productSKU = []
+            with connections['default'].cursor() as cursor:
+                cursor.execute(f"""select distinct P.SKU, count(P.SKU) as anzahl
+                                    from BESTELLUNG
+                                             join BESTELLPOSITION B on BESTELLUNG.BESTELLUNG_ID = B.BESTELLUNG_ID
+                                             join PRODUKT P on P.PRODUKT_ID = B.PRODUKT_ID
+                                    group by P.SKU
+                                    order by Anzahl desc
+                                    fetch first 10 rows only;""")
+                for row in cursor:
+                    productSKU.append(row[0])
+            return productSKU
+        except cx_Oracle.Error as error:
+            print('Error occurred:')
+            print(error)
+
+    def get(self, request):
+        productSKU = self.get_product_SKU()
+        print(productSKU)
+        product = get_products_by_skus(productSKU)
+        serializer = ProductSerializer(product, many=True)
+
+        return Response(serializer.data)
+
+
 class CartRecommendationsList(APIView):
     def post(self, request):
         products = request.data.get('items')
@@ -236,13 +267,16 @@ class CartRecommendationsList(APIView):
             skus = get_associations_two_products(products)
         else:
             skus = get_associations_more_products(products)
+
         for sku in products:
             one_product_associations = get_associations_from_db(sku)
             for association_sku in one_product_associations:
                 skus.append(association_sku)
+
         associations = get_products_by_skus(list(set(skus)))
         associations = add_discounts(associations)
         serializer = ProductSerializer(associations, many=True)
+        print(serializer.data)
         return Response(serializer.data)
 
 
@@ -300,6 +334,7 @@ def search(request):
         products = Product.objects.filter(
             (Q(name__icontains=query) | Q(description__icontains=query)) & Q(origin=1))
 
+        print(Product.objects)
         serializer = ProductSerializer(products, many=True)
         p = Paginator(serializer.data, 20)
         current_page = p.page(page_index)
@@ -309,20 +344,11 @@ def search(request):
         return Response({"page": []})
 
 
-def get_product_by_sku(req_sku):
-    product = Product.objects.filter(Q(sku=req_sku) & Q(origin=1))[:1].get()
-    return product
-
-
-def get_products_by_skus(skus):
-    products = []
-    for sku in skus:
-        products.append(get_product_by_sku(sku))
-    return products
 
 
 def get_association(sku):
     products = []
+
     if sku:
         products = get_products_by_skus(get_associations_from_db(sku))
     return products
@@ -332,6 +358,7 @@ def add_discounts(associations):
     products = Product.objects.exclude(image__isnull=True).order_by('-discount')[:10]
     for product in products:
         associations.append(product)
+
     return associations[:10]
 
 
@@ -343,4 +370,5 @@ def get_associations_from_db(sku):
         c.execute(sql)
         for row in c:
             associations.append(re.search(r'\d+', row[0]).group())
+
     return associations
