@@ -14,7 +14,7 @@ urlpatterns = [
     path('order-count-month/', views.OrderCountMonth.as_view()),
     path('order-count/', views.OrderCount.as_view()),
 
-    path('history-orders/', views.Orders.as_view()),
+    path('history-orders/', views.OrdersWeek.as_view()),
     path('history-revenue/', views.Revenue.as_view()),
     path('top-seller-products/', views.TopSellerProducts.as_view()),
     path('top-rated-products/', views.TopRatedProducts.as_view()),

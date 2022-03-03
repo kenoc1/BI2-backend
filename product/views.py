@@ -1,5 +1,6 @@
 import json
 import re
+from datetime import date, timedelta
 from operator import itemgetter
 
 from django.core.paginator import Paginator
@@ -310,22 +311,44 @@ class OrderRevenue(APIView):
             return Response({'order-revenue': 0})
 
 
-class Orders(APIView):
+class OrdersWeek(APIView):
+
+    @staticmethod
+    def beautify_date_string(string: str):
+        lst = string.split("-")
+        return f"{lst[2]}/{lst[1]}/{lst[0][2:]}"
+
     def get(self, request, format=None):
-        days = 100
+        days = 7
         orders = []
-        dates = []
+        rdates = []
         values = []
+
         with connections['oracle_db'].cursor() as c:
             sql = "select TRUNC(RECHNUNGSDATUM), count(RECHNUNG_ID) as ANZAHL_KAEUFE from RECHNUNG where " \
-                  "RECHNUNGSDATUM between sysdate - " + str(days) + " AND sysdate group by TRUNC(RECHNUNGSDATUM) order by TRUNC(RECHNUNGSDATUM)"
+                  "RECHNUNGSDATUM between sysdate - " + str(
+                days) + " AND sysdate group by TRUNC(RECHNUNGSDATUM) order by TRUNC(RECHNUNGSDATUM)"
             c.execute(sql)
-            for row in c:
-                dates.append(row[0])
-                values.append(row[1])
-                # orders.append([row[0], row[1]])
-                # orders.append({'date': row[0], 'order-count': row[1]})
-        orders.append(dates)
+            cursor_data = c.fetchall()
+
+        cdates = [elem[0].date() for elem in cursor_data]
+
+        if len(cdates) == 0:
+            rdates = [date.today() - timedelta(i) for i in [0, 1, 2, 3, 4, 5, 6, 7]]
+            values = [0, 0, 0, 0, 0, 0, 0]
+        else:
+            x = 0
+            current_date = date.today() - timedelta(7)
+            while len(values) < 7:
+                while cdates[x] != current_date:
+                    rdates.append(self.beautify_date_string(str(current_date)))
+                    values.append(0)
+                    current_date = current_date + timedelta(1)
+                if cdates[x] == current_date:
+                    rdates.append(self.beautify_date_string(str(current_date)))
+                    values.append(cursor_data[x][1])
+                    x += 1
+        orders.append(rdates)
         orders.append(values)
         return Response({'orders': orders})
 
