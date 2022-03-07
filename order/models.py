@@ -28,7 +28,7 @@ class CartProduct(models.Model):
 
 
 class Order(models.Model):
-    order_id = models.FloatField(primary_key=True, db_column='bestellung_id')
+    order_id = models.AutoField(primary_key=True, db_column='bestellung_id')
     cart = models.ForeignKey(Cart, models.DO_NOTHING, blank=True, null=True, db_column='warenkorb_id')
     order_date = models.DateField(db_column='bestelldatum')
     total_quantity = models.FloatField(db_column='gesamtmenge')
@@ -38,8 +38,30 @@ class Order(models.Model):
         managed = False
         db_table = 'bestellung'
 
-    # def __str__(self):
-    #     return self.order_id
+    def __str__(self):
+        return self.order_id
+
+
+class PaymentMethod(models.Model):
+    payment_id = models.AutoField(primary_key=True, db_column='zahlungart_id')
+    name = models.CharField(max_length=100, db_column='bezeichnung')
+
+    class Meta:
+        managed = False
+        db_table = 'zahlungsart'
+
+    def __str__(self):
+        return self.name
+
+
+class PaymentMethodOrder(models.Model):
+    customer_address_id = models.AutoField(primary_key=True, db_column='zahlungart_bestellung_id')
+    payment_method = models.ForeignKey(PaymentMethod, models.DO_NOTHING, blank=True, null=True, db_column='zahlungsart_id')
+    order = models.ForeignKey(Order, models.DO_NOTHING, blank=True, null=True, db_column='bestellung_id')
+
+    class Meta:
+        managed = False
+        db_table = 'zahlungsart_bestellung'
 
 
 class OrderItem(models.Model):
@@ -64,7 +86,7 @@ class Bill(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'bestellung'
+        db_table = 'rechnung'
 
     def __str__(self):
         return self.order_id

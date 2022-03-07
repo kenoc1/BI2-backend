@@ -12,7 +12,7 @@ from itertools import combinations
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-
+from rest_framework import status, authentication, permissions
 from util.page_object import Page_object
 from .models import Product, ProductSubcategory, ProductFamily, ProductDivision, ProductCategory
 from .serializers import ProductSerializer, ProductSubcategorySerializer, ProductFamilySerializer, \
@@ -34,6 +34,9 @@ def get_page_index(request):
 
 
 class PersonalRecommendationsList(APIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
     def get(self, request, format=None):
         product_skus = []
         customer_id = 5769  # TODO: get id from logged user
