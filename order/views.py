@@ -1,11 +1,10 @@
-import datetime
 import cx_Oracle
 import re
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.http import Http404
 from django.shortcuts import render
-from datetime import datetime
+import datetime
 from django.db import connections
 from rest_framework import status, authentication, permissions
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
@@ -21,55 +20,40 @@ from .serializers import OrderSerializer, MyOrderSerializer, MyOrderItemSerializ
 @authentication_classes([authentication.TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 def checkout(request):
-    print(request.data)
-    cart = Cart.objects.filter(customer__django_user__in=User.objects.filter(username=request.user))
-
+    cart = Cart.objects.filter(customer__django_user__in=User.objects.filter(username=request.user)).first()
     order = Order.objects.create(**{
         'cart': cart,
-        'order_date': datetime.date(datetime.now()),
+        'order_date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        'order_status': 'Abgeschlossen',
         'total_quantity': len(request.data['items']),
         'origin': 1
     })
-    payment = PaymentMethod.objects.filter(name=request.data['payment_service'])
+    payment = PaymentMethod.objects.filter(name__icontains=request.data['payment_service']).first()
     PaymentMethodOrder.objects.create(**{
-        'payment_id': payment.first(),
-        'order_id': order.order_id
+        'payment_method': payment,
+        'order': order
     })
+    total_net = 0
     total_gross = 0
     for item in request.data['items']:
-        product = Product.objects.filter(sku=item['product'], origin=1).first()
-        OrderItem.objects.create({
+        product = Product.objects.filter(sku=item['product']).filter(origin=1).first()
+        print(item)
+        # total_net = total_net + item['price'] * item['quantity']
+        # total_gross = total_gross + item['quantity'] * item['price'] * (1 + product.mwst)
+        total_net = total_net + float(item['price']) * float(item['quantity'])
+        total_gross = total_gross + float(item['quantity']) * float(item['price']) * (1 + product.mwst)
+        OrderItem.objects.create(**{
             'product': product,
             'order': order,
             'quantity': item['quantity']
         })
-    total_net = total_gross - total_gross*1
     bill = Bill.objects.create(**{
-        'customer_id': order.order_id,
+        'order': order,
+        'billing_date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         'total_gross': total_gross,
         'total_net': total_net,
     })
-
-    # serializer = OrderSerializer(data=request.data)
-    # if serializer.is_valid():
-    #     stripe.api_key = settings.STRIPE_SECRET_KEY
-    #     paid_amount = sum(item.get('quantity') * item.get('product').price for item in serializer.validated_data['items'])
-    #
-    #     try:
-    #         charge = stripe.Charge.create(
-    #             amount=int(paid_amount * 100),
-    #             currency='USD',
-    #             description='Charge from Djackets',
-    #             source=serializer.validated_data['stripe_token']
-    #         )
-    #
-    #         serializer.save(user=request.user, paid_amount=paid_amount)
-    #
-    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    #     except Exception:
-    #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return Response(status=status.HTTP_201_CREATED)
 
 
 class OrdersList(APIView):
@@ -77,10 +61,8 @@ class OrdersList(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, format=None):
-        print(request.user)
         cart = Cart.objects.filter(customer__django_user__in=User.objects.filter(username=request.user))
         cart_id = cart.values("cart_id")[0]['cart_id']
-        print(cart_id)
         try:
             results = []
             with connections['default'].cursor() as c:
@@ -93,7 +75,6 @@ class OrdersList(APIView):
                 last_number = -1
                 product_arr = []
                 for row in c:
-                    print(row)
                     if row[0] == last_number or last_number == -1:
                         product_arr.append({'name': row[4], 'quantity': row[2], 'price': row[3], 'product_id': row[5]})
                     else:

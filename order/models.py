@@ -30,7 +30,8 @@ class CartProduct(models.Model):
 class Order(models.Model):
     order_id = models.AutoField(primary_key=True, db_column='bestellung_id')
     cart = models.ForeignKey(Cart, models.DO_NOTHING, blank=True, null=True, db_column='warenkorb_id')
-    order_date = models.DateField(db_column='bestelldatum')
+    order_date = models.DateTimeField(db_column='bestelldatum')
+    order_status = models.CharField(db_column='status', max_length=30)
     total_quantity = models.FloatField(db_column='gesamtmenge')
     origin = models.FloatField(db_column="datenherkunft_id", blank=True, null=True)
 
@@ -43,7 +44,7 @@ class Order(models.Model):
 
 
 class PaymentMethod(models.Model):
-    payment_id = models.AutoField(primary_key=True, db_column='zahlungart_id')
+    payment_id = models.AutoField(primary_key=True, db_column='zahlungsart_id')
     name = models.CharField(max_length=100, db_column='bezeichnung')
 
     class Meta:
@@ -55,7 +56,7 @@ class PaymentMethod(models.Model):
 
 
 class PaymentMethodOrder(models.Model):
-    customer_address_id = models.AutoField(primary_key=True, db_column='zahlungart_bestellung_id')
+    customer_address_id = models.AutoField(primary_key=True, db_column='ZAHLUNGSART_BESTELLUNG_ID')
     payment_method = models.ForeignKey(PaymentMethod, models.DO_NOTHING, blank=True, null=True, db_column='zahlungsart_id')
     order = models.ForeignKey(Order, models.DO_NOTHING, blank=True, null=True, db_column='bestellung_id')
 
@@ -65,9 +66,9 @@ class PaymentMethodOrder(models.Model):
 
 
 class OrderItem(models.Model):
-    order_item_id = models.FloatField(primary_key=True, db_column='bestellposition_id')
-    product = models.ForeignKey(Product, models.DO_NOTHING, blank=True, null=True, db_column='produkt')
-    order = models.ForeignKey(Order, models.DO_NOTHING, blank=True, null=True, db_column='bestellung')
+    order_item_id = models.AutoField(primary_key=True, db_column='bestellposition_id')
+    product = models.ForeignKey(Product, models.DO_NOTHING, db_column='produkt_id')
+    order = models.ForeignKey(Order, models.DO_NOTHING, db_column='bestellung_id')
     quantity = models.FloatField(db_column='menge')
 
     class Meta:
@@ -81,6 +82,7 @@ class OrderItem(models.Model):
 class Bill(models.Model):
     bill_id = models.AutoField(primary_key=True, db_column='rechnung_id')
     order = models.ForeignKey(Order, models.DO_NOTHING, db_column='bestellung_id')
+    billing_date = models.DateTimeField(db_column='rechnungsdatum')
     total_gross = models.FloatField(db_column='summe_brutto')
     total_net = models.FloatField(db_column='summe_netto')
 
