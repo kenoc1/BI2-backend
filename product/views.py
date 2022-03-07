@@ -1,12 +1,12 @@
 import json
 import cx_Oracle
 import re
+
 from customer.models import Customer
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import Http404
-from django.db import connections
 from itertools import combinations
 
 from rest_framework import authentication, permissions
@@ -251,33 +251,60 @@ class FavoriteProduct(APIView):
 
 class CartRecommendationsList(APIView):
     def post(self, request):
-        products = request.data.get('items')
-        products = list(set(products))
-        skus = []
-        if len(products) == 2:
-            skus = get_associations_two_products(products)
+        req_products = request.data.get('items')
+        req_products = list(set(req_products))
+        associations = []
+        distinct_associations = []
+        sorted_association_skus = []
+        if len(req_products) == 2:
+            associations = get_associations_two_products(req_products)
         else:
-            skus = get_associations_more_products(products)
-        for sku in products:
+            associations = get_associations_more_products(req_products)
+        for sku in req_products:
             one_product_associations = get_associations_from_db(sku)
             for association_sku in one_product_associations:
-                skus.append(association_sku)
-        associations = get_products_by_skus(list(set(skus)))
-        associations = add_discounts(associations)
-        serializer = ProductSerializer(associations, many=True)
+                associations.append(association_sku)
+
+        # create distinct list with best lift per product
+        for association in associations:
+            if any(x.sku == association.sku for x in distinct_associations):
+                for a in distinct_associations:
+                    if a.sku == association.sku:
+                        a.lift = association.lift
+            else:
+                distinct_associations.append(association)
+        # sort by lift desc
+        distinct_associations.sort(key=lambda x: x.lift, reverse=True)
+        # get list with product skus
+        for association in distinct_associations:
+            sorted_association_skus.append(association.sku)
+
+        res_products = get_products_by_skus(list(set(sorted_association_skus)))
+        res_products = add_discounts(res_products)
+        serializer = ProductSerializer(res_products, many=True)
         return Response(serializer.data)
+
+
+class Association:
+    def __init__(self, sku, lift):
+        self.sku = sku
+        self.lift = lift
+
+    def __str__(self):
+        return "{0} , {1}".format(str(self.sku), str(self.lift))
 
 
 def get_associations_two_products(products):
     associations_two_products = []
     with connections['default'].cursor() as c:
-        sql = f"SELECT ITEMS_ADD FROM ASSOBESTELLUNG " \
+        sql = f"SELECT ITEMS_ADD, LIFT FROM ASSOBESTELLUNG " \
               f"WHERE ITEMS_BASE LIKE '%{products[0]}%' " \
               f"AND ITEMS_BASE LIKE '%{products[1]}%' " \
               f"ORDER BY LIFT DESC"
         c.execute(sql)
         for row in c:
-            associations_two_products.append(re.search(r'\d+', row[0]).group())
+            association = Association(re.search(r'\d+', row[0]).group(), row[1])
+            associations_two_products.append(association)
     return associations_two_products
 
 
@@ -291,26 +318,26 @@ def get_associations_three_products(products):
               f"ORDER BY LIFT DESC"
         c.execute(sql)
         for row in c:
-            associations_three_products.append(re.search(r'\d+', row[0]).group())
+            association = Association(re.search(r'\d+', row[0]).group(), row[1])
+            associations_three_products.append(association)
     return associations_three_products
 
 
 def get_associations_more_products(products):
-    product_skus_of_associations = []
+    associations = []
     combinations_two_products = [",".join(map(str, comb)) for comb in combinations(products, 2)]
     for combination in combinations_two_products:
         two_products = combination.split(",")
         associations_two_products = get_associations_two_products(two_products)
         for association in associations_two_products:
-            product_skus_of_associations.append(association)
+            associations.append(association)
     combinations_three_products = [",".join(map(str, comb)) for comb in combinations(products, 3)]
     for combination in combinations_three_products:
         three_products = combination.split(",")
         associations_three_products = get_associations_three_products(three_products)
         for association in associations_three_products:
-            product_skus_of_associations.append(association)
-    product_skus_of_associations = list(set(product_skus_of_associations))
-    return product_skus_of_associations
+            associations.append(association)
+    return associations
 
 
 @api_view(['POST'])
@@ -333,7 +360,11 @@ def search(request):
 def get_association(sku):
     products = []
     if sku:
-        products = get_products_by_skus(get_associations_from_db(sku))
+        skus = []
+        associations = get_associations_from_db(sku)
+        for association in associations:
+            skus.append(association.sku)
+        products = get_products_by_skus(skus)
     return products
 
 
@@ -347,9 +378,9 @@ def add_discounts(associations):
 def get_associations_from_db(sku):
     associations = []
     with connections['default'].cursor() as c:
-        sql = "SELECT ITEMS_ADD FROM ASSOBESTELLUNG WHERE ITEMS_BASE = '{" + str(
+        sql = "SELECT ITEMS_ADD, LIFT FROM ASSOBESTELLUNG WHERE ITEMS_BASE = '{" + str(
             sku) + "}' ORDER BY CONFIDENCE DESC FETCH FIRST 10 ROWS ONLY"
         c.execute(sql)
         for row in c:
-            associations.append(re.search(r'\d+', row[0]).group())
+            associations.append(Association(re.search(r'\d+', row[0]).group(), row[1]))
     return associations
