@@ -16,7 +16,8 @@ from rest_framework import status, authentication, permissions
 from util.page_object import Page_object
 from .models import Product, ProductSubcategory, ProductFamily, ProductDivision, ProductCategory
 from .serializers import ProductSerializer, ProductSubcategorySerializer, ProductFamilySerializer, \
-    ProductDivisionSerializer, ProductCategorySerializer
+    ProductCategorySerializer, ProductDivisionSerializer
+from django.db import connections
 
 
 class LatestProductsList(APIView):
@@ -34,9 +35,6 @@ def get_page_index(request):
 
 
 class PersonalRecommendationsList(APIView):
-    authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-
     def get(self, request, format=None):
         product_skus = []
         customer_id = 5769  # TODO: get id from logged user
