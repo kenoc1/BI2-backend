@@ -404,19 +404,19 @@ class TopSellerProducts(APIView):
 class LoginCountDay(APIView):
     def get(self, request, format=None):
         days = 1
-        return Response({'order-revenue': login_count(days=days)})
+        return Response({'logins': login_count(days=days)})
 
 
 class LoginCountWeek(APIView):
     def get(self, request, format=None):
         days = 7
-        return Response({'order-revenue': login_count(days=days)})
+        return Response({'logins': login_count(days=days)})
 
 
 class LoginCountMonth(APIView):
     def get(self, request, format=None):
         days = 30
-        return Response({'order-revenue': login_count(days=days)})
+        return Response({'logins': login_count(days=days)})
 
 
 def login_count(days: int):
