@@ -151,9 +151,9 @@ class AssociationsMr(APIView):
             sql = "SELECT t1.RULE_ID, t1.PRODUKT_ID, t1.SKU, t1.PROUKT_NAME, t2.PRODUKT_ID, t2.SKU, t2.PROUKT_NAME, t1.CONFIDENCE, t1.LIFT, t1.SUPPORT FROM (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEHERR, PRODUKT WHERE REPLACE(REPLACE(ITEMS_BASE, '{', ''), '}', '') = PRODUKT.SKU) t1 LEFT JOIN (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEHERR, PRODUKT WHERE REPLACE(REPLACE(ITEMS_ADD, '{', ''), '}', '') = PRODUKT.SKU) t2 ON (t1.RULE_ID=t2.RULE_ID);"
             c.execute(sql)
             for row in c:
-                asso.append({'rule-id': row[0], 'item-base-product-sku': row[2],
-                             'item-base-product-name': row[3],
-                             'item-add-product-sku': row[5], 'item-add-product-name': row[6], 'confidence': row[7],
+                asso.append({'ruleid': row[0], 'itembaseproductsku': row[2],
+                             'itembaseproductname': row[3],
+                             'itemaddproductsku': row[5], 'itemaddproductname': row[6], 'confidence': row[7],
                              'lift': row[8], 'support': row[9]})
             return Response({'asso-order': delete_duplicates(asso)})
 
@@ -165,9 +165,9 @@ class AssociationsMs(APIView):
             sql = "SELECT t1.RULE_ID, t1.PRODUKT_ID, t1.SKU, t1.PROUKT_NAME, t2.PRODUKT_ID, t2.SKU, t2.PROUKT_NAME, t1.CONFIDENCE, t1.LIFT, t1.SUPPORT FROM (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEFRAU, PRODUKT WHERE REPLACE(REPLACE(ITEMS_BASE, '{', ''), '}', '') = PRODUKT.SKU) t1 LEFT JOIN (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEFRAU, PRODUKT WHERE REPLACE(REPLACE(ITEMS_ADD, '{', ''), '}', '') = PRODUKT.SKU) t2 ON (t1.RULE_ID=t2.RULE_ID);"
             c.execute(sql)
             for row in c:
-                asso.append({'rule-id': row[0], 'item-base-product-sku': row[2],
-                             'item-base-product-name': row[3],
-                             'item-add-product-sku': row[5], 'item-add-product-name': row[6], 'confidence': row[7],
+                asso.append({'ruleid': row[0], 'itembaseproductsku': row[2],
+                             'itembaseproductname': row[3],
+                             'itemaddproductsku': row[5], 'itemaddproductname': row[6], 'confidence': row[7],
                              'lift': row[8], 'support': row[9]})
             return Response({'asso-order': delete_duplicates(asso)})
 
@@ -179,9 +179,9 @@ class AssociationsOrder(APIView):
             sql = "SELECT t1.RULE_ID, t1.PRODUKT_ID, t1.SKU, t1.PROUKT_NAME, t2.PRODUKT_ID, t2.SKU, t2.PROUKT_NAME, t1.CONFIDENCE, t1.LIFT, t1.SUPPORT FROM (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOBESTELLUNG, PRODUKT WHERE REPLACE(REPLACE(ITEMS_BASE, '{', ''), '}', '') = PRODUKT.SKU) t1 LEFT JOIN (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOBESTELLUNG, PRODUKT WHERE REPLACE(REPLACE(ITEMS_ADD, '{', ''), '}', '') = PRODUKT.SKU) t2 ON (t1.RULE_ID=t2.RULE_ID);"
             c.execute(sql)
             for row in c:
-                asso.append({'rule-id': row[0], 'item-base-product-sku': row[2],
-                             'item-base-product-name': row[3],
-                             'item-add-product-sku': row[5], 'item-add-product-name': row[6], 'confidence': row[7],
+                asso.append({'ruleid': row[0], 'itembaseproductsku': row[2],
+                             'itembaseproductname': row[3],
+                             'itemaddproductsku': row[5], 'itemaddproductname': row[6], 'confidence': row[7],
                              'lift': row[8], 'support': row[9]})
             return Response({'asso-order': delete_duplicates(asso)})
 
