@@ -30,7 +30,10 @@ SECRET_KEY = 'f_)*$6xz#a7k(6ir&u@+tq8h@_t_9%3nr%9g5z4vdp#*a4)a*o'
 DEBUG = True
 
 ALLOWED_HOSTS = ['bi-backend.azurewebsites.net',
-                 'dev-bi-backend.azurewebsites.net', 'localhost', '127.0.0.1']
+                 'dev-bi-backend.azurewebsites.net',
+                 '134.106.56.44',
+                 'localhost',
+                 '127.0.0.1']
 
 STRIPE_SECRET_KEY = 'sk_test_51HIHiuKBJV2qeWbD4IBpAODack7r7r9LJ0Y65zSFx7jUUwgy2nfKEgQGvorv1p2xp7tgMsJ5N9EW7K1lBdPnFnyK00kdrS27cj'
 
@@ -44,13 +47,22 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'django_crontab',
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
     'djoser',
 
     'product',
-    'order'
+    'order',
+    'customer'
+]
+
+#“At 00:00 on Sunday every week.”
+#“At 00:00 on Monday every week.”
+CRONJOBS = [
+    ('0 0 * * 0', 'BI2-backend.personal_recommendations_generator.save_associations_for_all_customers'),
+    ('0 0 * * 1', 'BI2-backend.generate_offers.start'),
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -97,10 +109,6 @@ WSGI_APPLICATION = 'djackets_django.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    },
-    'oracle_db': {
         'ENGINE': 'django.db.backends.oracle',
         'NAME': 'dbprak2',
         'USER': 'BI21',
@@ -109,8 +117,6 @@ DATABASES = {
         'PORT': '1521',
     }
 }
-
-DATABASE_ROUTERS = ['routers.db_routers.ProductRouter']
 
 
 # Password validation

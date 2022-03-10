@@ -1,38 +1,45 @@
 from rest_framework import serializers
 
-from .models import Order, OrderItem
+from .models import Order, OrderItem, Bill
 
-from product.serializers import ProductSerializer
+from product.serializers import ProductForOrderSerializer
+
 
 class MyOrderItemSerializer(serializers.ModelSerializer):    
-    product = ProductSerializer()
+    product = ProductForOrderSerializer()
 
     class Meta:
         model = OrderItem
         fields = (
-            "price",
             "product",
             "quantity",
         )
 
+
+class MyBillSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Bill
+        fields = (
+            "total_gross",
+            "total_net",
+        )
+
+
 class MyOrderSerializer(serializers.ModelSerializer):
     items = MyOrderItemSerializer(many=True)
+    # bill = MyBillSerializer()
 
     class Meta:
         model = Order
         fields = (
-            "id",
-            "first_name",
-            "last_name",
-            "email",
-            "address",
-            "zipcode",
-            "place",
-            "phone",
-            "stripe_token",
+            # "bill",
             "items",
-            "paid_amount"
+            "order_id",
+            "order_date",
+            "total_quantity",
         )
+
 
 class OrderItemSerializer(serializers.ModelSerializer):    
     class Meta:
@@ -42,6 +49,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "product",
             "quantity",
         )
+
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
