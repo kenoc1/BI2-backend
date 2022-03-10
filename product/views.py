@@ -2,6 +2,9 @@ import json
 
 import cx_Oracle
 import re
+from datetime import date, timedelta
+from operator import itemgetter
+
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import Http404
@@ -345,3 +348,358 @@ def get_associations_from_db(sku):
         for row in c:
             associations.append(re.search(r'\d+', row[0]).group())
     return associations
+
+
+def delete_duplicates(old_l):
+    seen = set()
+    new_l = []
+    for d in old_l:
+        t = tuple(d.items())
+        if t not in seen:
+            seen.add(t)
+            new_l.append(d)
+    return new_l
+
+
+class AssociationsMr(APIView):
+    def get(self, request, format=None):
+        asso = []
+        with connections['default'].cursor() as c:
+            sql = "SELECT t1.RULE_ID, t1.PRODUKT_ID, t1.SKU, t1.PROUKT_NAME, t2.PRODUKT_ID, t2.SKU, t2.PROUKT_NAME, t1.CONFIDENCE, t1.LIFT, t1.SUPPORT FROM (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEHERR, PRODUKT WHERE REPLACE(REPLACE(ITEMS_BASE, '{', ''), '}', '') = PRODUKT.SKU) t1 LEFT JOIN (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEHERR, PRODUKT WHERE REPLACE(REPLACE(ITEMS_ADD, '{', ''), '}', '') = PRODUKT.SKU) t2 ON (t1.RULE_ID=t2.RULE_ID);"
+            c.execute(sql)
+            for row in c:
+                asso.append({'ruleid': row[0], 'itembaseproductsku': row[2],
+                             'itembaseproductname': row[3],
+                             'itemaddproductsku': row[5], 'itemaddproductname': row[6], 'confidence': row[7],
+                             'lift': row[8], 'support': row[9]})
+            return Response({'asso-order': delete_duplicates(asso)})
+
+
+class AssociationsMs(APIView):
+    def get(self, request, format=None):
+        asso = []
+        with connections['default'].cursor() as c:
+            sql = "SELECT t1.RULE_ID, t1.PRODUKT_ID, t1.SKU, t1.PROUKT_NAME, t2.PRODUKT_ID, t2.SKU, t2.PROUKT_NAME, t1.CONFIDENCE, t1.LIFT, t1.SUPPORT FROM (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEFRAU, PRODUKT WHERE REPLACE(REPLACE(ITEMS_BASE, '{', ''), '}', '') = PRODUKT.SKU) t1 LEFT JOIN (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEFRAU, PRODUKT WHERE REPLACE(REPLACE(ITEMS_ADD, '{', ''), '}', '') = PRODUKT.SKU) t2 ON (t1.RULE_ID=t2.RULE_ID);"
+            c.execute(sql)
+            for row in c:
+                asso.append({'ruleid': row[0], 'itembaseproductsku': row[2],
+                             'itembaseproductname': row[3],
+                             'itemaddproductsku': row[5], 'itemaddproductname': row[6], 'confidence': row[7],
+                             'lift': row[8], 'support': row[9]})
+            return Response({'asso-order': delete_duplicates(asso)})
+
+
+class AssociationsOrder(APIView):
+    def get(self, request, format=None):
+        asso = []
+        with connections['default'].cursor() as c:
+            sql = "SELECT t1.RULE_ID, t1.PRODUKT_ID, t1.SKU, t1.PROUKT_NAME, t2.PRODUKT_ID, t2.SKU, t2.PROUKT_NAME, t1.CONFIDENCE, t1.LIFT, t1.SUPPORT FROM (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOBESTELLUNG, PRODUKT WHERE REPLACE(REPLACE(ITEMS_BASE, '{', ''), '}', '') = PRODUKT.SKU) t1 LEFT JOIN (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOBESTELLUNG, PRODUKT WHERE REPLACE(REPLACE(ITEMS_ADD, '{', ''), '}', '') = PRODUKT.SKU) t2 ON (t1.RULE_ID=t2.RULE_ID);"
+            c.execute(sql)
+            for row in c:
+                asso.append({'ruleid': row[0], 'itembaseproductsku': row[2],
+                             'itembaseproductname': row[3],
+                             'itemaddproductsku': row[5], 'itemaddproductname': row[6], 'confidence': row[7],
+                             'lift': row[8], 'support': row[9]})
+            return Response({'asso-order': delete_duplicates(asso)})
+
+
+class CustomerReviewRanking(APIView):
+    def get(self, request, format=None):
+        customer = []
+        with connections['default'].cursor() as c:
+            sql = "SELECT KUNDE.NACHNAME, REZENSION.KUNDENKONTO_ID, COUNT(REZENSION.REZENSION_ID) FROM REZENSION, " \
+                  "KUNDENKONTO, KUNDE WHERE REZENSION.KUNDENKONTO_ID = KUNDENKONTO.KUNDENKONTO_ID AND KUNDE.KUNDE_ID " \
+                  "= KUNDENKONTO.KUNDE_ID group by REZENSION.KUNDENKONTO_ID, KUNDE.NACHNAME order by COUNT(" \
+                  "REZENSION.REZENSION_ID) DESC;"
+            c.execute(sql)
+            for row in c:
+                customer.append({'customer-name': row[0], 'customer-account-id': row[1], 'review-count': row[2]})
+            return Response({'customer-review-ranking': customer})
+
+
+class CustomerRevenueRanking(APIView):
+    def get(self, request, format=None):
+        customer = []
+        with connections['default'].cursor() as c:
+            sql = "SELECT KUNDE.NACHNAME, KUNDE.KUNDE_ID, sum(RECHNUNG.SUMME_BRUTTO) FROM KUNDE, WARENKORB, BESTELLPOSITION, BESTELLUNG, RECHNUNG WHERE KUNDE.KUNDE_ID = WARENKORB.KUNDE_ID AND WARENKORB.WARENKORB_ID = BESTELLUNG.WARENKORB_ID AND BESTELLUNG.BESTELLUNG_ID = RECHNUNG.RECHNUNG_ID AND BESTELLUNG.BESTELLUNG_ID= BESTELLPOSITION.BESTELLUNG_ID group by KUNDE.NACHNAME, KUNDE.KUNDE_ID order by sum(RECHNUNG.SUMME_BRUTTO) DESC;"
+            c.execute(sql)
+            for row in c:
+                customer.append({'customer-name': row[0], 'customer-account-id': row[1], 'revenue-sum': row[2]})
+            return Response({'customer-revenue-ranking': customer})
+
+
+class TopRatedProducts(APIView):
+    def get(self, request, format=None):
+        products = []
+        with connections['default'].cursor() as c:
+            sql = "SELECT REZENSION.PRODUKT_ID, RANKING, count(REZENSION.PRODUKT_ID) FROM PRODUKT, REZENSION WHERE PRODUKT.PRODUKT_ID = REZENSION.PRODUKT_ID GROUP BY REZENSION.PRODUKT_ID, RANKING ORDER BY -RANKING ASC, count(REZENSION.PRODUKT_ID) ASC;"
+            c.execute(sql)
+            for row in c:
+                products.append({'product-id': row[0], 'ranking': row[1], 'ranking-count-for-product': row[2]})
+        return Response({'top-rated-products': products})
+
+
+class OrderCountDay(APIView):
+    def get(self, request, format=None):
+        with connections['default'].cursor() as c:
+            sql = "SELECT COUNT(Distinct BESTELLUNG_ID) FROM BESTELLUNG Where BESTELLDATUM between sysdate - 1 AND sysdate;"
+            c.execute(sql)
+            for row in c:
+                return Response({'orders': row[0]})
+            return Response({'orders': 0})
+
+
+class OrderCountWeek(APIView):
+    def get(self, request, format=None):
+        with connections['default'].cursor() as c:
+            sql = "SELECT COUNT(Distinct BESTELLUNG_ID) FROM BESTELLUNG Where BESTELLDATUM between sysdate - 7 AND sysdate;"
+            c.execute(sql)
+            for row in c:
+                return Response({'orders': row[0]})
+            return Response({'orders': 0})
+
+
+class OrderCountMonth(APIView):
+    def get(self, request, format=None):
+        with connections['default'].cursor() as c:
+            sql = "SELECT COUNT(Distinct BESTELLUNG_ID) FROM BESTELLUNG Where BESTELLDATUM between add_months(trunc(sysdate, 'mm'), -1) and last_day(add_months(trunc(sysdate, 'mm'), -1));"
+            c.execute(sql)
+            for row in c:
+                return Response({'orders': row[0]})
+            return Response({'orders': 0})
+
+
+class OrderCount(APIView):
+    def get(self, request, format=None):
+        with connections['default'].cursor() as c:
+            sql = "select COUNT(BESTELLUNG_ID) FROM BESTELLPOSITION;"
+            c.execute(sql)
+            for row in c:
+                return Response({'orders': row[0]})
+            return Response({'orders': 0})
+
+
+class OrderRevenueDay(APIView):
+    def get(self, request, format=None):
+        days = 1
+        with connections['default'].cursor() as c:
+            sql = "select sum(SUMME_BRUTTO) as GESAMT_UMSATZ_BRUTTO from RECHNUNG where RECHNUNGSDATUM between " \
+                  "sysdate - " + str(days) + " AND sysdate"
+            c.execute(sql)
+            for row in c:
+                if row[0] is None:
+                    return Response({'order-revenue': 0})
+                return Response({'order-revenue': row[0]})
+
+
+class OrderRevenueWeek(APIView):
+    def get(self, request, format=None):
+        days = 7
+        with connections['default'].cursor() as c:
+            sql = "select sum(SUMME_BRUTTO) as GESAMT_UMSATZ_BRUTTO from RECHNUNG where RECHNUNGSDATUM between " \
+                  "sysdate - " + str(days) + " AND sysdate"
+            c.execute(sql)
+            for row in c:
+                if row[0] is None:
+                    return Response({'order-revenue': 0})
+                return Response({'order-revenue': row[0]})
+
+
+class OrderRevenueMonth(APIView):
+    def get(self, request, format=None):
+        days = 30
+        with connections['default'].cursor() as c:
+            sql = "select sum(SUMME_BRUTTO) as GESAMT_UMSATZ_BRUTTO from RECHNUNG where RECHNUNGSDATUM between " \
+                  "sysdate - " + str(days) + " AND sysdate"
+            c.execute(sql)
+            for row in c:
+                if row[0] is None:
+                    return Response({'order-revenue': 0})
+                return Response({'order-revenue': row[0]})
+
+
+class OrderRevenue(APIView):
+    def get(self, request, format=None):
+        with connections['default'].cursor() as c:
+            sql = "select sum(SUMME_BRUTTO) as GESAMT_UMSATZ_BRUTTO from RECHNUNG"
+            c.execute(sql)
+            for row in c:
+                return Response({'order-revenue': row[0]})
+            return Response({'order-revenue': 0})
+
+
+def beautify_date_string(string: str):
+    lst = string.split("-")
+    return f"{lst[2]}/{lst[1]}/{lst[0][2:]}"
+
+
+def get_data_with_aggregated_dates(sql: str, days: int):
+    rdates = []
+    values = []
+
+    with connections['default'].cursor() as c:
+        c.execute(sql)
+        cursor_data = c.fetchall()
+
+    cdates = [elem[0].date() for elem in cursor_data]
+    if len(cdates) == 0:
+        rdates = [date.today() - timedelta(i) for i in range(days)]
+        for i in range(days):
+            values.append(i)
+    else:
+        cdate_index = 0
+        current_date = date.today() - timedelta(days)
+        while len(values) < days:
+            if len(cdates) > cdate_index:
+                while cdates[cdate_index] != current_date:
+                    rdates.append(beautify_date_string(str(current_date)))
+                    values.append(0)
+                    current_date = current_date + timedelta(1)
+                if cdates[cdate_index] == current_date:
+                    rdates.append(beautify_date_string(str(current_date)))
+                    values.append(cursor_data[cdate_index][1])
+                    current_date = current_date + timedelta(1)
+                    cdate_index += 1
+            else:
+                rdates.append(beautify_date_string(str(current_date)))
+                values.append(0)
+                current_date = current_date + timedelta(1)
+    return [rdates, values]
+
+
+def get_revenue_sql_statement(days: int) -> str:
+    return "select TRUNC(RECHNUNGSDATUM), sum(SUMME_BRUTTO) as ANZAHL_KAEUFE from RECHNUNG where " \
+           "RECHNUNGSDATUM between sysdate - " + str(
+        days) + " AND sysdate group by TRUNC(RECHNUNGSDATUM) order by TRUNC(RECHNUNGSDATUM)"
+
+
+def get_orders_sql_statement(days: int) -> str:
+    return "select TRUNC(RECHNUNGSDATUM), count(RECHNUNG_ID) as ANZAHL_KAEUFE from RECHNUNG where " \
+           "RECHNUNGSDATUM between sysdate - " + str(
+        days) + " AND sysdate group by TRUNC(RECHNUNGSDATUM) order by TRUNC(RECHNUNGSDATUM)"
+
+
+class OrdersOneHundredDays(APIView):
+    def get(self, request, format=None):
+        days = 100
+        sql = get_orders_sql_statement(days=days)
+        return Response({'orders': get_data_with_aggregated_dates(sql, days)})
+
+
+class OrdersWeek(APIView):
+    def get(self, request, format=None):
+        days = 7
+        sql = get_orders_sql_statement(days=days)
+        return Response({'orders': get_data_with_aggregated_dates(sql, days)})
+
+
+class RevenueOneHundredDays(APIView):
+    def get(self, request, format=None):
+        days = 100
+        sql = get_revenue_sql_statement(days=days)
+        return Response({'revenue': get_data_with_aggregated_dates(sql, days)})
+
+
+class RevenueWeek(APIView):
+    def get(self, request, format=None):
+        days = 7
+        sql = get_revenue_sql_statement(days=days)
+        return Response({'revenue': get_data_with_aggregated_dates(sql, days)})
+
+
+class TopSellerProducts(APIView):
+    def get(self, request, format=None):
+        products = []
+        with connections['default'].cursor() as c:
+            sql = "SELECT BESTELLPOSITION.PRODUKT_ID, COUNT(BESTELLPOSITION.PRODUKT_ID), SUM(BESTELLPOSITION.MENGE) FROM BESTELLPOSITION, BESTELLUNG WHERE BESTELLPOSITION.BESTELLUNG_ID = BESTELLUNG.BESTELLUNG_ID group by BESTELLPOSITION.PRODUKT_ID;"
+            c.execute(sql)
+            for row in c:
+                products.append({'product-id': row[0], 'number-of-sold': (row[1] * row[2])})
+        return Response({'top-seller-products': sorted(products, key=itemgetter('number-of-sold'), reverse=True)})
+
+
+class LoginCountDay(APIView):
+    def get(self, request, format=None):
+        days = 1
+        return Response({'logins': login_count(days=days)})
+
+
+class LoginCountWeek(APIView):
+    def get(self, request, format=None):
+        days = 7
+        return Response({'logins': login_count(days=days)})
+
+
+class LoginCountMonth(APIView):
+    def get(self, request, format=None):
+        days = 30
+        return Response({'logins': login_count(days=days)})
+
+
+def login_count(days: int):
+    with connections['default'].cursor() as c:
+        sql = "select COUNT(ID) from AUTH_USER where LAST_LOGIN between " \
+              "sysdate - " + str(days) + " AND sysdate"
+        c.execute(sql)
+        for row in c:
+            if row[0] is None:
+                return 0
+            return row[0]
+
+
+class OrderStatusCanceledDay(APIView):
+    def get(self, request, format=None):
+        days = 1
+        return Response({'status-canceled': order_status_canceled(days=days)})
+
+
+class OrderStatusCanceledWeek(APIView):
+    def get(self, request, format=None):
+        days = 7
+        return Response({'status-canceled': order_status_canceled(days=days)})
+
+
+class OrderStatusCanceledMonth(APIView):
+    def get(self, request, format=None):
+        days = 30
+        return Response({'status-canceled': order_status_canceled(days=days)})
+
+
+class OrderStatusCompletedDay(APIView):
+    def get(self, request, format=None):
+        days = 1
+        return Response({'status-completed': order_status_completed(days=days)})
+
+
+class OrderStatusCompletedWeek(APIView):
+    def get(self, request, format=None):
+        days = 7
+        return Response({'status-completed': order_status_completed(days=days)})
+
+
+class OrderStatusCompletedMonth(APIView):
+    def get(self, request, format=None):
+        days = 30
+        return Response({'status-completed': order_status_completed(days=days)})
+
+
+def order_status_completed(days: int):
+    with connections['default'].cursor() as c:
+        sql = "Select COUNT(BESTELLUNG_ID) FROM BESTELLUNG WHERE STATUS = 'Abgeschlossen' AND BESTELLDATUM between sysdate - " + str(
+            days) + " AND sysdate"
+        c.execute(sql)
+        for row in c:
+            if row[0] is None:
+                return 0
+            return row[0]
+
+
+def order_status_canceled(days: int):
+    with connections['default'].cursor() as c:
+        sql = "Select COUNT(BESTELLUNG_ID) FROM BESTELLUNG WHERE STATUS = 'Storniert' AND BESTELLDATUM between sysdate - " + str(
+            days) + " AND sysdate"
+        c.execute(sql)
+        for row in c:
+            if row[0] is None:
+                return 0
+            return row[0]
