@@ -70,7 +70,7 @@ class OrdersList(APIView):
                       f"FROM BI21.BESTELLUNG, BI21.BESTELLPOSITION, BI21.PRODUKT " \
                       f"WHERE BESTELLUNG.BESTELLUNG_ID=BESTELLPOSITION.BESTELLUNG_ID AND " \
                       f"BESTELLPOSITION.PRODUKT_ID=PRODUKT.PRODUKT_ID AND " \
-                      f"WARENKORB_ID = {cart_id} ORDER BY DESC BESTELLUNG.BESTELLUNG_ID"
+                      f"WARENKORB_ID = {cart_id} ORDER BY BESTELLUNG.BESTELLUNG_ID DESC"
                 c.execute(sql)
                 last_number = -1
                 product_arr = []
