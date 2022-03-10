@@ -45,5 +45,12 @@ class UserInformation(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, format=None):
-
-        return Response('test')
+        user = request.user
+        customer = Customer.objects.filter(django_user__in=User.objects.filter(username=user)).first()
+        address = Address.objects.filter(customeraddress__customer=customer).first()
+        print(address)
+        serializer_user = CustomerSerializer(customer)
+        serializer_address = AddressSerializer(address)
+        print(serializer_user.data)
+        print(serializer_address.data)
+        return Response({'user_data': serializer_user.data, 'address_data': serializer_address.data})
