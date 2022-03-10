@@ -364,7 +364,7 @@ def delete_duplicates(old_l):
 class AssociationsMr(APIView):
     def get(self, request, format=None):
         asso = []
-        with connections['oracle_db'].cursor() as c:
+        with connections['default'].cursor() as c:
             sql = "SELECT t1.RULE_ID, t1.PRODUKT_ID, t1.SKU, t1.PROUKT_NAME, t2.PRODUKT_ID, t2.SKU, t2.PROUKT_NAME, t1.CONFIDENCE, t1.LIFT, t1.SUPPORT FROM (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEHERR, PRODUKT WHERE REPLACE(REPLACE(ITEMS_BASE, '{', ''), '}', '') = PRODUKT.SKU) t1 LEFT JOIN (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEHERR, PRODUKT WHERE REPLACE(REPLACE(ITEMS_ADD, '{', ''), '}', '') = PRODUKT.SKU) t2 ON (t1.RULE_ID=t2.RULE_ID);"
             c.execute(sql)
             for row in c:
@@ -378,7 +378,7 @@ class AssociationsMr(APIView):
 class AssociationsMs(APIView):
     def get(self, request, format=None):
         asso = []
-        with connections['oracle_db'].cursor() as c:
+        with connections['default'].cursor() as c:
             sql = "SELECT t1.RULE_ID, t1.PRODUKT_ID, t1.SKU, t1.PROUKT_NAME, t2.PRODUKT_ID, t2.SKU, t2.PROUKT_NAME, t1.CONFIDENCE, t1.LIFT, t1.SUPPORT FROM (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEFRAU, PRODUKT WHERE REPLACE(REPLACE(ITEMS_BASE, '{', ''), '}', '') = PRODUKT.SKU) t1 LEFT JOIN (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOANREDEFRAU, PRODUKT WHERE REPLACE(REPLACE(ITEMS_ADD, '{', ''), '}', '') = PRODUKT.SKU) t2 ON (t1.RULE_ID=t2.RULE_ID);"
             c.execute(sql)
             for row in c:
@@ -392,7 +392,7 @@ class AssociationsMs(APIView):
 class AssociationsOrder(APIView):
     def get(self, request, format=None):
         asso = []
-        with connections['oracle_db'].cursor() as c:
+        with connections['default'].cursor() as c:
             sql = "SELECT t1.RULE_ID, t1.PRODUKT_ID, t1.SKU, t1.PROUKT_NAME, t2.PRODUKT_ID, t2.SKU, t2.PROUKT_NAME, t1.CONFIDENCE, t1.LIFT, t1.SUPPORT FROM (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOBESTELLUNG, PRODUKT WHERE REPLACE(REPLACE(ITEMS_BASE, '{', ''), '}', '') = PRODUKT.SKU) t1 LEFT JOIN (SELECT PRODUKT_ID, SKU, PROUKT_NAME, RULE_ID, ITEMS_BASE, ITEMS_ADD, CONFIDENCE, LIFT, SUPPORT FROM ASSOBESTELLUNG, PRODUKT WHERE REPLACE(REPLACE(ITEMS_ADD, '{', ''), '}', '') = PRODUKT.SKU) t2 ON (t1.RULE_ID=t2.RULE_ID);"
             c.execute(sql)
             for row in c:
@@ -406,7 +406,7 @@ class AssociationsOrder(APIView):
 class CustomerReviewRanking(APIView):
     def get(self, request, format=None):
         customer = []
-        with connections['oracle_db'].cursor() as c:
+        with connections['default'].cursor() as c:
             sql = "SELECT KUNDE.NACHNAME, REZENSION.KUNDENKONTO_ID, COUNT(REZENSION.REZENSION_ID) FROM REZENSION, " \
                   "KUNDENKONTO, KUNDE WHERE REZENSION.KUNDENKONTO_ID = KUNDENKONTO.KUNDENKONTO_ID AND KUNDE.KUNDE_ID " \
                   "= KUNDENKONTO.KUNDE_ID group by REZENSION.KUNDENKONTO_ID, KUNDE.NACHNAME order by COUNT(" \
@@ -420,7 +420,7 @@ class CustomerReviewRanking(APIView):
 class CustomerRevenueRanking(APIView):
     def get(self, request, format=None):
         customer = []
-        with connections['oracle_db'].cursor() as c:
+        with connections['default'].cursor() as c:
             sql = "SELECT KUNDE.NACHNAME, KUNDE.KUNDE_ID, sum(RECHNUNG.SUMME_BRUTTO) FROM KUNDE, WARENKORB, BESTELLPOSITION, BESTELLUNG, RECHNUNG WHERE KUNDE.KUNDE_ID = WARENKORB.KUNDE_ID AND WARENKORB.WARENKORB_ID = BESTELLUNG.WARENKORB_ID AND BESTELLUNG.BESTELLUNG_ID = RECHNUNG.RECHNUNG_ID AND BESTELLUNG.BESTELLUNG_ID= BESTELLPOSITION.BESTELLUNG_ID group by KUNDE.NACHNAME, KUNDE.KUNDE_ID order by sum(RECHNUNG.SUMME_BRUTTO) DESC;"
             c.execute(sql)
             for row in c:
@@ -431,7 +431,7 @@ class CustomerRevenueRanking(APIView):
 class TopRatedProducts(APIView):
     def get(self, request, format=None):
         products = []
-        with connections['oracle_db'].cursor() as c:
+        with connections['default'].cursor() as c:
             sql = "SELECT REZENSION.PRODUKT_ID, RANKING, count(REZENSION.PRODUKT_ID) FROM PRODUKT, REZENSION WHERE PRODUKT.PRODUKT_ID = REZENSION.PRODUKT_ID GROUP BY REZENSION.PRODUKT_ID, RANKING ORDER BY -RANKING ASC, count(REZENSION.PRODUKT_ID) ASC;"
             c.execute(sql)
             for row in c:
@@ -441,7 +441,7 @@ class TopRatedProducts(APIView):
 
 class OrderCountDay(APIView):
     def get(self, request, format=None):
-        with connections['oracle_db'].cursor() as c:
+        with connections['default'].cursor() as c:
             sql = "SELECT COUNT(Distinct BESTELLUNG_ID) FROM BESTELLUNG Where BESTELLDATUM between sysdate - 1 AND sysdate;"
             c.execute(sql)
             for row in c:
@@ -451,7 +451,7 @@ class OrderCountDay(APIView):
 
 class OrderCountWeek(APIView):
     def get(self, request, format=None):
-        with connections['oracle_db'].cursor() as c:
+        with connections['default'].cursor() as c:
             sql = "SELECT COUNT(Distinct BESTELLUNG_ID) FROM BESTELLUNG Where BESTELLDATUM between sysdate - 7 AND sysdate;"
             c.execute(sql)
             for row in c:
@@ -461,7 +461,7 @@ class OrderCountWeek(APIView):
 
 class OrderCountMonth(APIView):
     def get(self, request, format=None):
-        with connections['oracle_db'].cursor() as c:
+        with connections['default'].cursor() as c:
             sql = "SELECT COUNT(Distinct BESTELLUNG_ID) FROM BESTELLUNG Where BESTELLDATUM between add_months(trunc(sysdate, 'mm'), -1) and last_day(add_months(trunc(sysdate, 'mm'), -1));"
             c.execute(sql)
             for row in c:
@@ -471,7 +471,7 @@ class OrderCountMonth(APIView):
 
 class OrderCount(APIView):
     def get(self, request, format=None):
-        with connections['oracle_db'].cursor() as c:
+        with connections['default'].cursor() as c:
             sql = "select COUNT(BESTELLUNG_ID) FROM BESTELLPOSITION;"
             c.execute(sql)
             for row in c:
@@ -482,7 +482,7 @@ class OrderCount(APIView):
 class OrderRevenueDay(APIView):
     def get(self, request, format=None):
         days = 1
-        with connections['oracle_db'].cursor() as c:
+        with connections['default'].cursor() as c:
             sql = "select sum(SUMME_BRUTTO) as GESAMT_UMSATZ_BRUTTO from RECHNUNG where RECHNUNGSDATUM between " \
                   "sysdate - " + str(days) + " AND sysdate"
             c.execute(sql)
@@ -495,7 +495,7 @@ class OrderRevenueDay(APIView):
 class OrderRevenueWeek(APIView):
     def get(self, request, format=None):
         days = 7
-        with connections['oracle_db'].cursor() as c:
+        with connections['default'].cursor() as c:
             sql = "select sum(SUMME_BRUTTO) as GESAMT_UMSATZ_BRUTTO from RECHNUNG where RECHNUNGSDATUM between " \
                   "sysdate - " + str(days) + " AND sysdate"
             c.execute(sql)
@@ -508,7 +508,7 @@ class OrderRevenueWeek(APIView):
 class OrderRevenueMonth(APIView):
     def get(self, request, format=None):
         days = 30
-        with connections['oracle_db'].cursor() as c:
+        with connections['default'].cursor() as c:
             sql = "select sum(SUMME_BRUTTO) as GESAMT_UMSATZ_BRUTTO from RECHNUNG where RECHNUNGSDATUM between " \
                   "sysdate - " + str(days) + " AND sysdate"
             c.execute(sql)
@@ -520,7 +520,7 @@ class OrderRevenueMonth(APIView):
 
 class OrderRevenue(APIView):
     def get(self, request, format=None):
-        with connections['oracle_db'].cursor() as c:
+        with connections['default'].cursor() as c:
             sql = "select sum(SUMME_BRUTTO) as GESAMT_UMSATZ_BRUTTO from RECHNUNG"
             c.execute(sql)
             for row in c:
@@ -537,7 +537,7 @@ def get_data_with_aggregated_dates(sql: str, days: int):
     rdates = []
     values = []
 
-    with connections['oracle_db'].cursor() as c:
+    with connections['default'].cursor() as c:
         c.execute(sql)
         cursor_data = c.fetchall()
 
@@ -610,7 +610,7 @@ class RevenueWeek(APIView):
 class TopSellerProducts(APIView):
     def get(self, request, format=None):
         products = []
-        with connections['oracle_db'].cursor() as c:
+        with connections['default'].cursor() as c:
             sql = "SELECT BESTELLPOSITION.PRODUKT_ID, COUNT(BESTELLPOSITION.PRODUKT_ID), SUM(BESTELLPOSITION.MENGE) FROM BESTELLPOSITION, BESTELLUNG WHERE BESTELLPOSITION.BESTELLUNG_ID = BESTELLUNG.BESTELLUNG_ID group by BESTELLPOSITION.PRODUKT_ID;"
             c.execute(sql)
             for row in c:
@@ -637,7 +637,7 @@ class LoginCountMonth(APIView):
 
 
 def login_count(days: int):
-    with connections['oracle_db'].cursor() as c:
+    with connections['default'].cursor() as c:
         sql = "select COUNT(ID) from AUTH_USER where LAST_LOGIN between " \
               "sysdate - " + str(days) + " AND sysdate"
         c.execute(sql)
@@ -684,7 +684,7 @@ class OrderStatusCompletedMonth(APIView):
 
 
 def order_status_completed(days: int):
-    with connections['oracle_db'].cursor() as c:
+    with connections['default'].cursor() as c:
         sql = "Select COUNT(BESTELLUNG_ID) FROM BESTELLUNG WHERE STATUS = 'Abgeschlossen' AND BESTELLDATUM between sysdate - " + str(
             days) + " AND sysdate"
         c.execute(sql)
@@ -695,7 +695,7 @@ def order_status_completed(days: int):
 
 
 def order_status_canceled(days: int):
-    with connections['oracle_db'].cursor() as c:
+    with connections['default'].cursor() as c:
         sql = "Select COUNT(BESTELLUNG_ID) FROM BESTELLUNG WHERE STATUS = 'Storniert' AND BESTELLDATUM between sysdate - " + str(
             days) + " AND sysdate"
         c.execute(sql)
