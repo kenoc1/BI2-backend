@@ -10,6 +10,7 @@ from operator import itemgetter
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import Http404
+
 from django.db import connections
 from itertools import combinations
 from rest_framework import authentication, permissions
@@ -108,11 +109,35 @@ class FamilyDetail(APIView):
             raise Http404
 
     def get(self, request, family_slug):
-        page_index = get_page_index(request)
+        if request.GET.get('pg') is None:
+            page_index = 1
+        else:
+            page_index = request.GET.get('pg')
         family = self.get_object(family_slug)
         divisions = ProductDivision.objects.filter(product_family=family)
         products = Product.objects.filter(subcategory__product_category__product_division__in=divisions).exclude(
             image__isnull=True).exclude(image="Kein Bild")
+
+        if not request.GET.get('ftr') is None:
+            filter = request.GET.get('ftr')
+            products = products.filter(evaluation__in=filter)
+
+        if not request.GET.get('pr') is None:
+            priceRange = request.GET.get('pr').split(',')
+            products = products.filter(price__lte=priceRange[1], price__gte=priceRange[0])
+
+        # check order params
+        if not request.GET.get('psrt') is None:
+            if request.GET.get('psrt') == 'HighToLow':
+                products = products.order_by('-price')
+            else:
+                products = products.order_by('price')
+        elif not request.GET.get('nsrt') is None:
+            if request.GET.get('nsrt') == 'HighToLow':
+                products = products.order_by('name')
+            else:
+                products = products.order_by('-name')
+
         serializer_family = ProductFamilySerializer(family)
         serializer_products = ProductSerializer(products, many=True)
         p = Paginator(serializer_products.data, 20)
@@ -351,6 +376,7 @@ def search(request):
     if query:
         products = Product.objects.filter(
             (Q(name__icontains=query) | Q(description__icontains=query)) & Q(origin=1))
+
         serializer = ProductSerializer(products, many=True)
         p = Paginator(serializer.data, 20)
         current_page = p.page(page_index)
