@@ -155,9 +155,26 @@ class DivisionDetail(APIView):
 
     def get(self, request, family_slug, division_slug):
         page_index = get_page_index(request)
-        print(page_index)
         division = self.get_object(division_slug)
         products = Product.objects.filter(subcategory__product_category__product_division=division)
+        if not request.GET.get('ftr') is None:
+            filter = request.GET.get('ftr')
+            products = products.filter(evaluation__in=filter)
+
+        if not request.GET.get('pr') is None:
+            priceRange = request.GET.get('pr').split(',')
+            products = products.filter(price__lte=priceRange[1], price__gte=priceRange[0])
+
+        if not request.GET.get('psrt') is None:
+            if request.GET.get('psrt') == 'HighToLow':
+                products = products.order_by('-price')
+            else:
+                products = products.order_by('price')
+        elif not request.GET.get('nsrt') is None:
+            if request.GET.get('nsrt') == 'HighToLow':
+                products = products.order_by('name')
+            else:
+                products = products.order_by('-name')
         serializer_family = ProductDivisionSerializer(division)
         serializer_products = ProductSerializer(products, many=True)
         p = Paginator(serializer_products.data, 20)
