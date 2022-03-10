@@ -179,9 +179,9 @@ class SubcategoryDetail(APIView):
 
 
 class FavoriteProductByFamilySlug(APIView):
-    def get_product_SKU(self, family_slug):
+    def get_product_skus(self, family_slug):
         try:
-            productSKU = []
+            product_skus = []
             print(family_slug)
             with connections['default'].cursor() as cursor:
                 cursor.execute(f"""select distinct P.SKU, count(P.SKU) as anzahl
@@ -197,16 +197,16 @@ class FavoriteProductByFamilySlug(APIView):
                                     order by Anzahl desc
                                     fetch first 10 rows only;""")
                 for row in cursor:
-                    productSKU.append(row[0])
-            return productSKU
+                    product_skus.append(row[0])
+            return product_skus
         except cx_Oracle.Error as error:
             print('Error occurred:')
             print(error)
 
     def get(self, request, family_slug):
-        productSKU = self.get_product_SKU(family_slug)
-        product = get_products_by_skus(productSKU)
-        serializer = ProductSerializer(product, many=True)
+        product_skus = self.get_product_skus(family_slug)
+        products = get_products_by_skus(product_skus)
+        serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
 
 
@@ -223,9 +223,9 @@ def get_products_by_skus(skus):
 
 
 class FavoriteProduct(APIView):
-    def get_product_SKU(self):
+    def get_product_skus(self):
         try:
-            productSKU = []
+            product_skus = []
             with connections['default'].cursor() as cursor:
                 cursor.execute(f"""select distinct P.SKU, count(P.SKU) as anzahl
                                     from BESTELLUNG
@@ -235,17 +235,17 @@ class FavoriteProduct(APIView):
                                     order by Anzahl desc
                                     fetch first 10 rows only;""")
                 for row in cursor:
-                    productSKU.append(row[0])
-            return productSKU
+                    product_skus.append(row[0])
+            return product_skus
         except cx_Oracle.Error as error:
             print('Error occurred:')
             print(error)
 
     def get(self, request):
-        productSKU = self.get_product_SKU()
-        print(productSKU)
-        product = get_products_by_skus(productSKU)
-        serializer = ProductSerializer(product, many=True)
+        product_skus = self.get_product_skus()
+        print(product_skus)
+        products = get_products_by_skus(product_skus)
+        serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
 
 
@@ -379,7 +379,7 @@ def get_associations_from_db(sku):
     associations = []
     with connections['default'].cursor() as c:
         sql = "SELECT ITEMS_ADD, LIFT FROM ASSOBESTELLUNG WHERE ITEMS_BASE = '{" + str(
-            sku) + "}' ORDER BY CONFIDENCE DESC FETCH FIRST 10 ROWS ONLY"
+            sku) + "}' ORDER BY LIFT DESC FETCH FIRST 10 ROWS ONLY"
         c.execute(sql)
         for row in c:
             associations.append(Association(re.search(r'\d+', row[0]).group(), row[1]))
