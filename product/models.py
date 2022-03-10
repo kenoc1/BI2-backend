@@ -72,7 +72,7 @@ class ProductSubcategory(models.Model):
 
 
 class Product(models.Model):
-    product_id = models.FloatField(primary_key=True, db_column="produkt_id", default=1)
+    product_id = models.AutoField(primary_key=True, db_column="produkt_id")
     subcategory = models.ForeignKey(ProductSubcategory, related_name='products', on_delete=models.CASCADE,
                                     db_column="produktklasse_id", blank=True, null=True)
     name = models.CharField(db_column="proukt_name", max_length=150)
@@ -84,6 +84,7 @@ class Product(models.Model):
     evaluation = models.FloatField(db_column="bewertung", blank=True, null=True)
     recycle = models.FloatField(db_column="recyclebar", blank=True, null=True)
     lowfat = models.FloatField(db_column="low_fat", blank=True, null=True)
+    mwst = models.FloatField(db_column="mwst_satz")
     discount = models.FloatField(db_column="angebotsrabatt", blank=True, null=True)
     origin = models.FloatField(db_column="datenherkunft_id", blank=True, null=True)
     # date_added = models.DateTimeField(auto_now_add=True)

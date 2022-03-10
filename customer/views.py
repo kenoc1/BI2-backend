@@ -1,3 +1,4 @@
+from django.db import connections
 from django.shortcuts import render
 
 from rest_framework import status, authentication, permissions
@@ -11,8 +12,14 @@ from django.contrib.auth.models import User, UserManager
 
 
 @api_view(['POST'])
-def login(request):
+def register(request):
     data = request.data
+    with connections['default'].cursor() as c:
+        sql = f"SELECT TOP 1 products.id FROM products " \
+              f"WHERE products.id = { data.get('login_data').get('username')}"
+        c.execute(sql)
+        for row in c:
+            return Response({'information': 'invalid_user'})
     django_user = User.objects.create_user(data.get('login_data').get('username'), data.get('customer').get('email'),
                                            data.get('login_data').get('password'))
     data['customer'].update({'django_user': django_user.id})
@@ -31,3 +38,19 @@ def login(request):
     if customer_address:
         return Response(status=status.HTTP_201_CREATED)
     return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserInformation(APIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, format=None):
+        user = request.user
+        customer = Customer.objects.filter(django_user__in=User.objects.filter(username=user)).first()
+        address = Address.objects.filter(customeraddress__customer=customer).first()
+        print(address)
+        serializer_user = CustomerSerializer(customer)
+        serializer_address = AddressSerializer(address)
+        print(serializer_user.data)
+        print(serializer_address.data)
+        return Response({'user_data': serializer_user.data, 'address_data': serializer_address.data})
